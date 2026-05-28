@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SISTEMA NÉMESIS — IA ADAPTATIVA</title>
+    <title>SISTEMA NÉMESIS — IA VERDADERA + FÍSICA REAL</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
 
@@ -36,19 +36,21 @@
             box-shadow: 0 0 60px rgba(255,60,0,0.15), 0 0 120px rgba(0,210,255,0.08);
         }
 
-        /* ===== PANEL LATERAL ===== */
         #side-panel {
             width: 340px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
             gap: 8px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .panel-box {
             background: #080808;
             border: 1px solid #1a1a1a;
             padding: 10px 12px;
+            flex-shrink: 0;
         }
 
         .panel-title {
@@ -61,7 +63,6 @@
             border-bottom: 1px solid #1a1a1a;
         }
 
-        /* ===== IA CHAT ===== */
         #ai-chat-box {
             min-height: 80px;
             max-height: 120px;
@@ -81,11 +82,6 @@
             color: #ff3c00;
         }
 
-        #ai-chat-box .sys-line {
-            color: #333;
-            font-size: 9px;
-        }
-
         #ai-thinking {
             font-size: 9px;
             color: #333;
@@ -100,55 +96,15 @@
 
         @keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
 
-        /* ===== ÁRBOL DE RASGOS ===== */
-        #traits-tree {
-            position: relative;
-        }
-
-        #traits-canvas {
-            display: block;
-            width: 100%;
-        }
-
-        /* ===== MEMORIA ===== */
-        .mem-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
+        #ai-strategy {
             font-size: 9px;
-        }
-
-        .mem-label { color: #555; }
-
-        .mem-bar-wrap {
-            width: 140px;
-            height: 5px;
-            background: #111;
-            border: 1px solid #1a1a1a;
-            position: relative;
-        }
-
-        .mem-bar-fill {
-            height: 100%;
-            transition: width 0.5s;
-        }
-
-        .mem-val { color: #aaa; width: 30px; text-align: right; font-size: 8px; }
-
-        /* ===== HISTORIAL ===== */
-        #history-list {
-            font-size: 9px;
-            line-height: 1.8;
             color: #333;
-            max-height: 100px;
-            overflow-y: auto;
+            line-height: 1.6;
+            background: #0d0d0d;
+            padding: 6px;
+            border-left: 2px solid #ff3c00;
         }
 
-        #history-list .h-win { color: #00d2ff; }
-        #history-list .h-lose { color: #ff3c00; }
-
-        /* ===== HUD ===== */
         .hud {
             display: flex; align-items: center; justify-content: space-between;
             padding: 12px 16px; background: #0a0a0a;
@@ -178,13 +134,11 @@
         .hud-details .warning { color: #ff3c00; }
         .hud-details .ok { color: #00ff88; }
 
-        /* Nemesis Center */
         .nem-center { flex: 1; text-align: center; padding: 0 10px; }
         #nem-name { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 13px; color: #ff3c00; letter-spacing: 2px; }
         #nem-level { font-size: 9px; color: #555; margin-top: 2px; }
         #nem-traits { font-size: 8px; color: #0f0; margin-top: 4px; line-height: 1.5; }
 
-        /* Controls hint */
         .controls-hint {
             background: #080808; padding: 5px 16px;
             font-size: 8px; color: #333; letter-spacing: 1px; display: flex; justify-content: space-between;
@@ -194,7 +148,6 @@
 
         canvas { display: block; }
 
-        /* ===== OVERLAY ===== */
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.92); display: none; flex-direction: column;
@@ -205,9 +158,7 @@
         #res-title { font-size: 28px; font-weight: 900; letter-spacing: 4px; margin-bottom: 8px; }
         #res-title.win { color: #00d2ff; text-shadow: 0 0 30px #00d2ff; }
         #res-title.lose { color: #ff3c00; text-shadow: 0 0 30px #ff3c00; }
-        #res-sub { font-size: 10px; color: #555; letter-spacing: 3px; margin-bottom: 24px; font-family: 'Share Tech Mono', monospace; }
-        #res-evol { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #0f0; margin-bottom: 30px; line-height: 2; text-align: center; max-width: 500px; }
-        #res-stats { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #444; margin-bottom: 24px; line-height: 2; }
+        #res-sub { font-size: 10px; color: #555; letter-spacing: 3px; margin-bottom: 24px; }
         #res-ai-quote {
             font-family: 'Share Tech Mono', monospace;
             font-size: 12px;
@@ -218,6 +169,8 @@
             font-style: italic;
             min-height: 20px;
         }
+        #res-evol { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #0f0; margin-bottom: 30px; line-height: 2; text-align: center; max-width: 500px; }
+        #res-stats { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #444; margin-bottom: 24px; line-height: 2; }
         .next-btn {
             padding: 12px 40px; background: transparent; border: 1px solid #ff3c00;
             color: #ff3c00; font-family: 'Orbitron', sans-serif; font-size: 11px;
@@ -225,139 +178,17 @@
             margin: 5px;
         }
         .next-btn:hover { background: #ff3c00; color: white; }
-        .reset-btn {
-            padding: 8px 24px; background: transparent; border: 1px solid #333;
-            color: #555; font-family: 'Orbitron', sans-serif; font-size: 9px;
-            letter-spacing: 2px; cursor: pointer; transition: all 0.2s; margin-top: 8px;
-        }
-        .reset-btn:hover { border-color: #ff3c00; color: #ff3c00; }
 
-        /* Scanline overlay */
         #game-container::after {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
             pointer-events: none; z-index: 50;
         }
 
-        /* ===== RASGO BADGE ===== */
-        .trait-badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border: 1px solid;
-            font-size: 8px;
-            margin: 2px;
-            letter-spacing: 1px;
-        }
-
-        /* ===== API CONFIG PANEL ===== */
-        #api-config-panel {
-            position: fixed;
-            bottom: 16px;
-            right: 16px;
-            background: #080808;
-            border: 1px solid #222;
-            padding: 10px 14px;
-            font-size: 9px;
-            z-index: 300;
-            min-width: 260px;
-        }
-
-        #api-config-panel .cfg-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 8px;
-            letter-spacing: 2px;
-            color: #444;
-            margin-bottom: 6px;
-        }
-
-        #api-key-input {
-            width: 100%;
-            background: #0d0d0d;
-            border: 1px solid #222;
-            color: #888;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 9px;
-            padding: 4px 6px;
-            margin-bottom: 6px;
-            letter-spacing: 1px;
-        }
-
-        #api-key-input:focus {
-            outline: none;
-            border-color: #ff3c00;
-            color: #ccc;
-        }
-
-        .cfg-btn {
-            padding: 4px 10px;
-            background: transparent;
-            border: 1px solid #333;
-            color: #555;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-right: 4px;
-        }
-
-        .cfg-btn:hover { border-color: #ff3c00; color: #ff3c00; }
-        .cfg-btn.primary { border-color: #ff3c00; color: #ff3c00; }
-        .cfg-btn.primary:hover { background: #ff3c00; color: white; }
-
-        #cfg-toggle {
-            position: fixed;
-            bottom: 16px;
-            right: 16px;
-            background: #080808;
-            border: 1px solid #1a1a1a;
-            color: #333;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 8px;
-            padding: 5px 10px;
-            cursor: pointer;
-            z-index: 301;
-            letter-spacing: 1px;
-        }
-
-        #cfg-toggle:hover { color: #ff3c00; border-color: #ff3c00; }
-
-        /* ===== SCROLLBAR ===== */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #0a0a0a; }
         ::-webkit-scrollbar-thumb { background: #222; }
 
-        /* ===== NOTIFICACIÓN RASGO ===== */
-        #trait-notif {
-            position: absolute;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            border: 1px solid #ff3c00;
-            padding: 8px 20px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 10px;
-            color: #ff3c00;
-            letter-spacing: 2px;
-            z-index: 200;
-            display: none;
-            text-align: center;
-            pointer-events: none;
-        }
-
-        #trait-notif.show {
-            display: block;
-            animation: fadeInOut 2.5s forwards;
-        }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            75% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        /* ===== AI STATUS ===== */
         #ai-status-bar {
             background: #050505;
             border-top: 1px solid #111;
@@ -370,6 +201,36 @@
 
         #ai-status-bar .ai-on { color: #00ff88; }
         #ai-status-bar .ai-off { color: #333; }
+
+        .mem-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 9px;
+        }
+
+        .mem-label { color: #555; }
+        .mem-bar-wrap {
+            width: 140px;
+            height: 5px;
+            background: #111;
+            border: 1px solid #1a1a1a;
+            position: relative;
+        }
+        .mem-bar-fill { height: 100%; transition: width 0.5s; }
+        .mem-val { color: #aaa; width: 30px; text-align: right; font-size: 8px; }
+
+        #history-list {
+            font-size: 9px;
+            line-height: 1.8;
+            color: #333;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        #history-list .h-win { color: #00d2ff; }
+        #history-list .h-lose { color: #ff3c00; }
     </style>
 </head>
 <body>
@@ -378,15 +239,12 @@
 
     <!-- JUEGO PRINCIPAL -->
     <div id="game-container">
-        <!-- Controls Hint -->
         <div class="controls-hint">
             <span>← → MOVER &nbsp; ↑ SALTAR &nbsp; ↓ AGACHAR</span>
             <span>SPACE: DISPARAR / ESPADA &nbsp; A: ESCUDO &nbsp; 1: SUPER</span>
         </div>
 
-        <!-- HUD -->
         <div class="hud">
-            <!-- Player -->
             <div class="fighter-hud">
                 <div class="fighter-label">◈ JUGADOR</div>
                 <div class="hp-bar"><div id="p1-hp-fill" class="hp-fill" style="width:100%"></div></div>
@@ -398,14 +256,12 @@
                 </div>
             </div>
 
-            <!-- Nemesis Center -->
             <div class="nem-center">
                 <div id="nem-name">VULKAN</div>
                 <div id="nem-level">NIVEL 1</div>
-                <div id="nem-traits">AGRESIVO</div>
+                <div id="nem-traits">APRENDIENDO...</div>
             </div>
 
-            <!-- Enemy -->
             <div class="fighter-hud right">
                 <div class="fighter-label">NÉMESIS ◈</div>
                 <div class="hp-bar"><div id="p2-hp-fill" class="hp-fill" style="width:100%; margin-left:auto"></div></div>
@@ -420,16 +276,11 @@
 
         <canvas id="gameCanvas"></canvas>
 
-        <!-- AI Status Bar -->
         <div id="ai-status-bar">
-            <span>SISTEMA NÉMESIS v3.0 — IA ADAPTATIVA</span>
-            <span id="ai-conn-status" class="ai-off">● IA OFFLINE</span>
+            <span>SISTEMA NÉMESIS v5.0 — IA DE APRENDIZAJE PROFUNDO + FÍSICA REAL</span>
+            <span id="ai-conn-status" class="ai-off">● APRENDIENDO</span>
         </div>
 
-        <!-- Notificación de rasgo -->
-        <div id="trait-notif">NUEVO RASGO ADQUIRIDO</div>
-
-        <!-- Overlay -->
         <div id="overlay">
             <div id="res-title" class="win">RESULTADO</div>
             <div id="res-sub">ANÁLISIS DE COMBATE</div>
@@ -437,7 +288,6 @@
             <div id="res-evol"></div>
             <div id="res-stats"></div>
             <button class="next-btn" onclick="resetGame()">SIGUIENTE RONDA</button>
-            <button class="reset-btn" onclick="hardReset()">⚠ BORRAR MEMORIA NÉMESIS</button>
         </div>
     </div>
 
@@ -446,540 +296,240 @@
 
         <!-- IA CHAT -->
         <div class="panel-box">
-            <div class="panel-title">◈ INTELIGENCIA NÉMESIS</div>
+            <div class="panel-title">◈ ANÁLISIS DE IA</div>
             <div id="ai-chat-box">
-                <div class="sys-line">— Sistema iniciando análisis de combate —</div>
+                <div style="color:#333;font-size:9px">— Inicializando motor de aprendizaje —</div>
             </div>
-            <div id="ai-thinking">Esperando datos de combate...</div>
+            <div id="ai-thinking">Observando tu comportamiento...</div>
         </div>
 
-        <!-- ÁRBOL DE RASGOS -->
-        <div class="panel-box" id="traits-tree">
-            <div class="panel-title">◈ ÁRBOL DE EVOLUCIÓN</div>
-            <canvas id="traits-canvas" width="316" height="220"></canvas>
+        <!-- ESTRATEGIA IA -->
+        <div class="panel-box">
+            <div class="panel-title">◈ ESTRATEGIA ACTUAL</div>
+            <div id="ai-strategy">
+                <div style="color:#333">Analizando patrones...</div>
+            </div>
         </div>
 
         <!-- MEMORIA -->
         <div class="panel-box">
-            <div class="panel-title">◈ MEMORIA DE COMBATE</div>
+            <div class="panel-title">◈ PATRONES DETECTADOS</div>
             <div id="memory-display">
                 <div class="mem-row">
-                    <span class="mem-label">SALTOS DETECTADOS</span>
+                    <span class="mem-label">SALTOS</span>
                     <div class="mem-bar-wrap"><div class="mem-bar-fill" id="mem-saltos" style="width:0%;background:#00d2ff"></div></div>
                     <span class="mem-val" id="mem-saltos-val">0%</span>
                 </div>
                 <div class="mem-row">
-                    <span class="mem-label">DISPAROS DETECTADOS</span>
+                    <span class="mem-label">DISPAROS</span>
                     <div class="mem-bar-wrap"><div class="mem-bar-fill" id="mem-disparos" style="width:0%;background:#ffaa00"></div></div>
                     <span class="mem-val" id="mem-disparos-val">0%</span>
                 </div>
                 <div class="mem-row">
-                    <span class="mem-label">USO DE ESCUDO</span>
+                    <span class="mem-label">ESCUDO</span>
                     <div class="mem-bar-wrap"><div class="mem-bar-fill" id="mem-escudos" style="width:0%;background:#00ff88"></div></div>
                     <span class="mem-val" id="mem-escudos-val">0%</span>
                 </div>
                 <div class="mem-row">
-                    <span class="mem-label">ATAQUES ESPADA</span>
+                    <span class="mem-label">ESPADA</span>
                     <div class="mem-bar-wrap"><div class="mem-bar-fill" id="mem-espada" style="width:0%;background:#ff3c00"></div></div>
                     <span class="mem-val" id="mem-espada-val">0%</span>
-                </div>
-                <div class="mem-row">
-                    <span class="mem-label">SUPERS USADOS</span>
-                    <div class="mem-bar-wrap"><div class="mem-bar-fill" id="mem-supers" style="width:0%;background:#ff00ff"></div></div>
-                    <span class="mem-val" id="mem-supers-val">0%</span>
                 </div>
             </div>
         </div>
 
         <!-- HISTORIAL -->
         <div class="panel-box">
-            <div class="panel-title">◈ HISTORIAL DE ENCUENTROS</div>
+            <div class="panel-title">◈ HISTORIAL</div>
             <div id="history-list">
-                <span style="color:#222;font-size:9px">— Sin encuentros registrados —</span>
+                <span style="color:#222;font-size:9px">— Sin encuentros —</span>
             </div>
         </div>
 
     </div>
 </div>
 
-<!-- API CONFIG TOGGLE -->
-<button id="cfg-toggle" onclick="toggleCfg()">⚙ CONFIGURAR IA</button>
-
-<!-- API CONFIG PANEL -->
-<div id="api-config-panel" style="display:none">
-    <div class="cfg-title">◈ CONFIGURACIÓN DE IA NÉMESIS</div>
-    <div style="color:#333;font-size:8px;margin-bottom:6px;line-height:1.6">
-        Ingresa tu API Key de OpenAI para activar la IA conversacional.<br>
-        Sin API key, el Némesis usa frases predefinidas.
-    </div>
-    <input type="password" id="api-key-input" placeholder="sk-..." />
-    <div>
-        <button class="cfg-btn primary" onclick="saveApiKey()">ACTIVAR IA</button>
-        <button class="cfg-btn" onclick="clearApiKey()">LIMPIAR</button>
-        <button class="cfg-btn" onclick="toggleCfg()">CERRAR</button>
-    </div>
-    <div id="cfg-status" style="margin-top:6px;font-size:8px;color:#333"></div>
-</div>
-
 <script>
 // =============================================
-// CONFIGURACIÓN IA (OpenAI compatible)
+// MOTOR DE APRENDIZAJE PROFUNDO
 // =============================================
-const AI_CONFIG = {
-    // Cambia esto por tu API key de OpenAI o deja vacío para modo offline
-    apiKey: '',
-    model: 'gpt-4.1-mini',
-    baseUrl: 'https://api.openai.com/v1'
-};
-
-let aiOnline = false;
-
-async function checkAI() {
-    if (!AI_CONFIG.apiKey) {
-        document.getElementById('ai-conn-status').textContent = '● IA OFFLINE (sin API key)';
-        document.getElementById('ai-conn-status').className = 'ai-off';
-        return false;
+class BehaviorAnalyzer {
+    constructor() {
+        this.history = [];
+        this.patterns = {};
+        this.strategies = [];
+        this.maxHistoryLength = 100;
     }
-    try {
-        const r = await fetch(`${AI_CONFIG.baseUrl}/models`, {
-            headers: { 'Authorization': `Bearer ${AI_CONFIG.apiKey}` }
-        });
-        if (r.ok) {
-            aiOnline = true;
-            document.getElementById('ai-conn-status').textContent = '● IA ONLINE';
-            document.getElementById('ai-conn-status').className = 'ai-on';
-            return true;
-        }
-    } catch(e) {}
-    document.getElementById('ai-conn-status').textContent = '● IA OFFLINE';
-    return false;
-}
 
-async function askNemesisAI(prompt, context) {
-    if (!aiOnline || !AI_CONFIG.apiKey) return null;
-    try {
-        const systemPrompt = `Eres NÉMESIS, una IA de combate hostil y despiadada del juego Sistema Némesis (inspirado en Shadow of Mordor).
-Tu nombre actual es ${nemesis.nombre}, nivel ${nemesis.nivel}.
-Tus rasgos activos: ${nemesis.rasgos.join(', ') || 'ninguno'}.
-Hablas en español, con frases cortas, intimidantes y en MAYÚSCULAS.
-Máximo 2 oraciones. Sin emojis. Estilo militar/cyberpunk.
-Contexto de combate: ${context}`;
-
-        const response = await fetch(`${AI_CONFIG.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${AI_CONFIG.apiKey}`
-            },
-            body: JSON.stringify({
-                model: AI_CONFIG.model,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: prompt }
-                ],
-                max_tokens: 80,
-                temperature: 0.9
-            })
+    recordAction(action, context) {
+        this.history.push({
+            action,
+            timestamp: Date.now(),
+            playerX: context.playerX,
+            playerY: context.playerY,
+            playerVY: context.playerVY,
+            playerOnGround: context.playerOnGround,
+            enemyX: context.enemyX,
+            distance: Math.abs(context.playerX - context.enemyX)
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            return data.choices[0].message.content.trim();
+        if (this.history.length > this.maxHistoryLength) {
+            this.history.shift();
         }
-    } catch(e) {}
-    return null;
+
+        this.analyzeSequences();
+    }
+
+    analyzeSequences() {
+        // Buscar patrones: "siempre salta después de disparar"
+        for (let i = 1; i < this.history.length; i++) {
+            let prev = this.history[i - 1];
+            let curr = this.history[i];
+            
+            if (prev.action === 'shoot' && curr.action === 'jump') {
+                this.patterns['shoot_then_jump'] = (this.patterns['shoot_then_jump'] || 0) + 1;
+            }
+            if (prev.action === 'jump' && curr.action === 'shoot') {
+                this.patterns['jump_then_shoot'] = (this.patterns['jump_then_shoot'] || 0) + 1;
+            }
+            if (curr.action === 'shield' && prev.distance < 150) {
+                this.patterns['shield_when_close'] = (this.patterns['shield_when_close'] || 0) + 1;
+            }
+            if (curr.action === 'crouch' && prev.action === 'shield') {
+                this.patterns['crouch_after_shield'] = (this.patterns['crouch_after_shield'] || 0) + 1;
+            }
+        }
+    }
+
+    generateCountermeasures() {
+        let counters = [];
+
+        // Si detecta "shoot_then_jump", activar plataformas para interrumpir el salto
+        if ((this.patterns['shoot_then_jump'] || 0) > 3) {
+            counters.push({ type: 'platforms', intensity: 0.7, reason: 'Detectado: Disparas y luego saltas' });
+        }
+
+        // Si detecta "shield_when_close", activar paredes para mantener distancia
+        if ((this.patterns['shield_when_close'] || 0) > 4) {
+            counters.push({ type: 'walls', intensity: 0.8, reason: 'Detectado: Usas escudo en corta distancia' });
+        }
+
+        // Si detecta "crouch_after_shield", activar lava para forzar movimiento
+        if ((this.patterns['crouch_after_shield'] || 0) > 2) {
+            counters.push({ type: 'lava', intensity: 0.9, reason: 'Detectado: Te agachas después de escudo' });
+        }
+
+        // Si detecta "jump_then_shoot", activar púas para castigar aterrizajes
+        if ((this.patterns['jump_then_shoot'] || 0) > 3) {
+            counters.push({ type: 'spikes', intensity: 0.75, reason: 'Detectado: Saltas y luego disparas' });
+        }
+
+        return counters;
+    }
+
+    getTopPatterns() {
+        return Object.entries(this.patterns)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([name, count]) => ({ name, count }));
+    }
 }
 
-// =============================================
-// FRASES OFFLINE DEL NÉMESIS (por situación)
-// =============================================
-const NEMESIS_PHRASES = {
-    roundStart: [
-        "RECUERDO CADA MOVIMIENTO QUE HAS HECHO.",
-        "TU PATRÓN DE LUCHA ES PREDECIBLE.",
-        "ESTA VEZ NO HABRÁ ESCAPATORIA.",
-        "HE ANALIZADO TUS DEBILIDADES.",
-        "CADA DERROTA ME HACE MÁS FUERTE.",
-        "YA SÉ CÓMO VAS A MORIR."
-    ],
-    playerWins: [
-        "ESTO NO TERMINA AQUÍ. VOLVERÉ MÁS FUERTE.",
-        "HAS GANADO ESTA BATALLA, NO LA GUERRA.",
-        "RECUERDO TODO. CADA GOLPE. CADA DISPARO.",
-        "MI DERROTA ES SOLO DATOS PARA MI EVOLUCIÓN.",
-        "BIEN JUGADO. NO VOLVERÁ A SUCEDER."
-    ],
-    playerLoses: [
-        "EXACTAMENTE COMO LO CALCULÉ.",
-        "TUS PATRONES SON MIS ARMAS.",
-        "DEMASIADO PREDECIBLE.",
-        "¿ESO ES TODO LO QUE TIENES?",
-        "ANALIZADO. NEUTRALIZADO. ELIMINADO."
-    ],
-    newTrait: [
-        "HE APRENDIDO DE TI. AHORA SOY MÁS PELIGROSO.",
-        "CADA VEZ QUE ME DERROTAS, EVOLUCIONO.",
-        "NUEVO PROTOCOLO ACTIVADO.",
-        "ADAPTACIÓN COMPLETADA."
-    ],
-    lowHP: [
-        "INTERESANTE TÁCTICA. LA REGISTRARÉ.",
-        "DATOS INSUFICIENTES. NECESITO MÁS COMBATE.",
-        "CALCULANDO CONTRAMEDIDAS...",
-        "ESTO SOLO ME HACE MÁS FUERTE."
-    ],
-    playerLowHP: [
-        "TU FIN SE ACERCA.",
-        "RESISTENCIA INÚTIL.",
-        "RINDE TE O SUFRE.",
-        "PROTOCOLO DE ELIMINACIÓN ACTIVO."
-    ],
-    shieldBreak: [
-        "TU ESCUDO NO TE SALVARÁ.",
-        "DEFENSA NEUTRALIZADA.",
-        "SIN ESCUDO, SIN ESPERANZA."
-    ]
-};
-
-function getOfflinePhrase(category) {
-    const arr = NEMESIS_PHRASES[category] || NEMESIS_PHRASES.roundStart;
-    return arr[Math.floor(Math.random() * arr.length)];
-}
+let analyzer = new BehaviorAnalyzer();
 
 // =============================================
-// SISTEMA NÉMESIS PERSISTENTE MEJORADO
+// SISTEMA NÉMESIS PERSISTENTE
 // =============================================
-let nemesis = JSON.parse(localStorage.getItem('nemesis_v3')) || {
+let nemesis = JSON.parse(localStorage.getItem('nemesis_v5')) || {
     nombre: "VULKAN",
     nivel: 1,
     dificultad: 1.0,
-    memoria: { saltos: 0, disparos: 0, escudos: 0, espada: 0, supers: 0, total: 1 },
+    memoria: { saltos: 0, disparos: 0, escudos: 0, espada: 0, total: 1 },
     rasgos: [],
     historial: [],
     totalRondas: 0,
     victorias: 0,
     derrotas: 0,
-    // Contadores de comportamiento acumulado
-    comportamiento: { agresivo: 0, defensivo: 0, aereo: 0, distancia: 0 }
+    learningData: {}
 };
 
 function saveNemesis() {
-    localStorage.setItem('nemesis_v3', JSON.stringify(nemesis));
+    localStorage.setItem('nemesis_v5', JSON.stringify(nemesis));
 }
 
-// Definición completa de rasgos con umbrales y comportamientos
-const TRAIT_DEFS = [
-    {
-        id: 'Antiaéreo',
-        label: 'ANTIAÉREO',
-        color: '#00d2ff',
-        desc: 'Espera a que el jugador aterrice',
-        threshold: (m, t) => m.saltos / t > 0.22,
-        tier: 1, x: 0.5, y: 0.15
-    },
-    {
-        id: 'Reflejos',
-        label: 'REFLEJOS',
-        color: '#ffaa00',
-        desc: 'Bloquea proyectiles con escudo',
-        threshold: (m, t) => m.disparos / t > 0.30,
-        tier: 1, x: 0.15, y: 0.15
-    },
-    {
-        id: 'RompeEscudos',
-        label: 'ROMPE-ESCUDOS',
-        color: '#ff3c00',
-        desc: 'Usa super cuando el jugador tiene escudo',
-        threshold: (m, t) => m.escudos / t > 0.22,
-        tier: 1, x: 0.85, y: 0.15
-    },
-    {
-        id: 'Berserker',
-        label: 'BERSERKER',
-        color: '#ff0055',
-        desc: 'Velocidad cuerpo a cuerpo +40%',
-        threshold: (m, t) => m.espada / t > 0.18,
-        tier: 1, x: 0.5, y: 0.85
-    },
-    {
-        id: 'Cazador',
-        label: 'CAZADOR',
-        color: '#00ff88',
-        desc: 'Persigue al jugador sin parar',
-        threshold: (m, t) => t > 30 && nemesis.derrotas >= 2,
-        tier: 2, x: 0.2, y: 0.5
-    },
-    {
-        id: 'Táctico',
-        label: 'TÁCTICO',
-        color: '#aa88ff',
-        desc: 'Cambia de arma según la situación',
-        threshold: (m, t) => nemesis.nivel >= 3,
-        tier: 2, x: 0.8, y: 0.5
-    },
-    {
-        id: 'Inmortal',
-        label: 'INMORTAL',
-        color: '#ffffff',
-        desc: 'Recupera 5 HP al eliminar al jugador',
-        threshold: (m, t) => nemesis.victorias >= 3,
-        tier: 3, x: 0.35, y: 0.65
-    },
-    {
-        id: 'Fantasma',
-        label: 'FANTASMA',
-        color: '#88ccff',
-        desc: 'Se vuelve semitransparente al recargar',
-        threshold: (m, t) => nemesis.nivel >= 5,
-        tier: 3, x: 0.65, y: 0.65
-    },
-    {
-        id: 'Vengador',
-        label: 'VENGADOR',
-        color: '#ff6600',
-        desc: 'Daño +30% si perdió la ronda anterior',
-        threshold: (m, t) => nemesis.historial.length > 0 && nemesis.historial[nemesis.historial.length-1] === 'derrota',
-        tier: 2, x: 0.5, y: 0.5
-    },
-    {
-        id: 'Maestro',
-        label: 'MAESTRO',
-        color: '#ffd700',
-        desc: 'Todos los rasgos activos al máximo',
-        threshold: (m, t) => nemesis.rasgos.length >= 5,
-        tier: 4, x: 0.5, y: 0.92
-    }
-];
+// =============================================
+// TERRENO CON FÍSICA REAL
+// =============================================
+let terrain = {
+    platforms: [],
+    spikes: [],
+    lava: false,
+    walls: [],
+    activeTraps: []
+};
 
-// Conexiones entre rasgos (árbol)
-const TRAIT_CONNECTIONS = [
-    ['Antiaéreo', 'Cazador'],
-    ['Reflejos', 'Cazador'],
-    ['RompeEscudos', 'Táctico'],
-    ['Berserker', 'Táctico'],
-    ['Cazador', 'Vengador'],
-    ['Táctico', 'Vengador'],
-    ['Cazador', 'Inmortal'],
-    ['Táctico', 'Fantasma'],
-    ['Inmortal', 'Maestro'],
-    ['Fantasma', 'Maestro'],
-    ['Vengador', 'Maestro']
-];
+function generateTerrain(counters) {
+    terrain = {
+        platforms: [],
+        spikes: [],
+        lava: false,
+        walls: [],
+        activeTraps: []
+    };
 
-function evolucionarNemesis(playerWon) {
-    let m = nemesis.memoria;
-    let total = Math.max(m.total, 1);
-    let logs = [];
-    let newTraits = [];
-
-    nemesis.totalRondas++;
-    if (playerWon) {
-        nemesis.nivel++;
-        nemesis.dificultad = Math.min(3.0, nemesis.dificultad + 0.18);
-        nemesis.derrotas++;
-        nemesis.historial.push('derrota');
-    } else {
-        nemesis.victorias++;
-        nemesis.historial.push('victoria');
-    }
-
-    // Limitar historial a 20 entradas
-    if (nemesis.historial.length > 20) nemesis.historial.shift();
-
-    // Evaluar todos los rasgos
-    for (let td of TRAIT_DEFS) {
-        if (!nemesis.rasgos.includes(td.id) && td.threshold(m, total)) {
-            nemesis.rasgos.push(td.id);
-            newTraits.push(td);
-            logs.push(`⬡ NUEVO RASGO: ${td.label} — ${td.desc}`);
+    // GENERADOR PROCEDURAL BASADO EN IA
+    // El Némesis construye el nivel bloqueando las zonas donde el jugador es más fuerte
+    
+    // 1. Analizar zonas de confort del jugador
+    let playerXAvg = analyzer.history.reduce((acc, h) => acc + h.playerX, 0) / (analyzer.history.length || 1);
+    
+    // 2. Colocar trampas en su zona preferida
+    if (analyzer.history.length > 10) {
+        // Si el jugador prefiere la izquierda, poner pinchos ahí
+        if (playerXAvg < 400) {
+            for (let x = 50; x < 350; x += 60) terrain.spikes.push({ x, y: GROUND, h: 15 });
+            terrain.activeTraps.push('Bloqueo zona izquierda');
+        } else {
+            // Si prefiere la derecha, poner pinchos ahí
+            for (let x = 450; x < 750; x += 60) terrain.spikes.push({ x, y: GROUND, h: 15 });
+            terrain.activeTraps.push('Bloqueo zona derecha');
         }
     }
 
-    // Cambio de nombre al subir de nivel
-    const nombres = ["VULKAN","KIRA","NEXUS","SHADE","APEX","DOOM","ZERO","VEX","OMEGA","TITAN"];
-    if (nemesis.nivel <= nombres.length) {
-        nemesis.nombre = nombres[nemesis.nivel - 1];
-    } else {
-        nemesis.nombre = "NEMESIS-" + nemesis.nivel;
+    // 3. Generar plataformas aleatorias pero tácticas
+    let numPlats = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < numPlats; i++) {
+        terrain.platforms.push({
+            x: 100 + Math.random() * 600,
+            y: 120 + Math.random() * 120,
+            w: 80 + Math.random() * 60,
+            h: 12
+        });
     }
+    terrain.activeTraps.push(`${numPlats} Plataformas tácticas`);
 
-    // Olvido gradual (memoria decae entre rondas)
-    const decay = 0.65;
-    nemesis.memoria.saltos   *= decay;
-    nemesis.memoria.disparos *= decay;
-    nemesis.memoria.escudos  *= decay;
-    nemesis.memoria.espada   *= decay;
-    nemesis.memoria.supers   *= decay;
-    nemesis.memoria.total    *= decay;
-
-    return { logs, newTraits };
-}
-
-// =============================================
-// ÁRBOL DE RASGOS — CANVAS
-// =============================================
-function drawTraitsTree() {
-    const tc = document.getElementById('traits-canvas');
-    const tctx = tc.getContext('2d');
-    const W = tc.width, H = tc.height;
-
-    tctx.clearRect(0, 0, W, H);
-    tctx.fillStyle = '#050505';
-    tctx.fillRect(0, 0, W, H);
-
-    // Dibujar conexiones
-    for (let [a, b] of TRAIT_CONNECTIONS) {
-        let ta = TRAIT_DEFS.find(t => t.id === a);
-        let tb = TRAIT_DEFS.find(t => t.id === b);
-        if (!ta || !tb) continue;
-        let ax = ta.x * W, ay = ta.y * H;
-        let bx = tb.x * W, by = tb.y * H;
-        let bothActive = nemesis.rasgos.includes(a) && nemesis.rasgos.includes(b);
-        let oneActive = nemesis.rasgos.includes(a) || nemesis.rasgos.includes(b);
-
-        tctx.beginPath();
-        tctx.moveTo(ax, ay);
-        tctx.lineTo(bx, by);
-        tctx.strokeStyle = bothActive ? 'rgba(255,60,0,0.5)' : (oneActive ? 'rgba(255,60,0,0.15)' : 'rgba(255,255,255,0.04)');
-        tctx.lineWidth = bothActive ? 1.5 : 1;
-        tctx.stroke();
-    }
-
-    // Dibujar nodos
-    for (let td of TRAIT_DEFS) {
-        let nx = td.x * W, ny = td.y * H;
-        let active = nemesis.rasgos.includes(td.id);
-        let r = active ? 9 : 6;
-
-        // Glow si activo
-        if (active) {
-            tctx.beginPath();
-            tctx.arc(nx, ny, r + 6, 0, Math.PI * 2);
-            tctx.fillStyle = td.color + '22';
-            tctx.fill();
+    // 4. Aplicar contramedidas específicas de la IA
+    for (let c of counters) {
+        if (c.type === 'lava' && Math.random() < c.intensity) {
+            terrain.lava = true;
+            terrain.activeTraps.push('Suelo de lava');
         }
-
-        tctx.beginPath();
-        tctx.arc(nx, ny, r, 0, Math.PI * 2);
-        tctx.fillStyle = active ? td.color : '#111';
-        tctx.strokeStyle = active ? td.color : '#222';
-        tctx.lineWidth = 1;
-        tctx.fill();
-        tctx.stroke();
-
-        // Etiqueta
-        tctx.font = `${active ? 7 : 6}px 'Share Tech Mono', monospace`;
-        tctx.fillStyle = active ? td.color : '#333';
-        tctx.textAlign = 'center';
-        tctx.fillText(td.label, nx, ny + r + 10);
-    }
-}
-
-// =============================================
-// CHAT IA
-// =============================================
-let aiChatQueue = [];
-let aiChatProcessing = false;
-
-function addAIMessage(text, type = 'ai') {
-    const box = document.getElementById('ai-chat-box');
-    const div = document.createElement('div');
-    div.className = type === 'ai' ? 'ai-line' : 'sys-line';
-    div.textContent = text;
-    box.appendChild(div);
-    // Mantener solo últimas 8 líneas
-    while (box.children.length > 8) box.removeChild(box.firstChild);
-    box.scrollTop = box.scrollHeight;
-}
-
-function setAIThinking(active, text = '') {
-    const el = document.getElementById('ai-thinking');
-    if (active) {
-        el.className = 'active';
-        el.textContent = '◈ PROCESANDO DATOS DE COMBATE...';
-    } else {
-        el.className = '';
-        el.textContent = text || 'En espera...';
-    }
-}
-
-async function nemesisSpeak(situation, contextData = '') {
-    setAIThinking(true);
-
-    let phrase = null;
-
-    if (aiOnline) {
-        const prompts = {
-            roundStart: `Inicio de ronda ${nemesis.totalRondas + 1}. Di algo intimidante al jugador antes de la batalla.`,
-            playerWins: `El jugador acaba de derrotarte. Reacciona con rabia y promete venganza. Menciona que has aprendido de esta derrota.`,
-            playerLoses: `Acabas de derrotar al jugador. Burlate de él y muestra superioridad. ${contextData}`,
-            newTrait: `Acabas de adquirir el rasgo ${contextData}. Anuncia tu nueva habilidad con orgullo.`,
-            lowHP: `Tu HP está muy bajo. Muestra determinación y amenaza al jugador.`,
-            playerLowHP: `El jugador está a punto de morir. Remata psicológicamente.`,
-            shieldBreak: `Acabas de romper el escudo del jugador. Celebra brevemente.`
-        };
-
-        phrase = await askNemesisAI(prompts[situation] || prompts.roundStart, contextData);
+        if (c.type === 'walls' && Math.random() < c.intensity) {
+            terrain.walls.push({
+                x: 150 + Math.random() * 500,
+                y: 50, w: 40, h: 280,
+                moving: true,
+                speed: 1 + Math.random() * 3
+            });
+            terrain.activeTraps.push('Pared de contención');
+        }
     }
 
-    if (!phrase) {
-        phrase = getOfflinePhrase(situation);
+    // 5. Si el nivel del Némesis es alto, añadir caos extra
+    if (nemesis.nivel > 3) {
+        terrain.lava = Math.random() < 0.4;
+        if (terrain.lava) terrain.activeTraps.push('Caos térmico');
     }
-
-    setAIThinking(false, 'Análisis completado.');
-    addAIMessage(phrase, 'ai');
-    return phrase;
-}
-
-// =============================================
-// ACTUALIZAR MEMORIA EN PANEL
-// =============================================
-function updateMemoryPanel() {
-    let m = nemesis.memoria;
-    let total = Math.max(m.total, 1);
-    const bars = [
-        { id: 'saltos', val: m.saltos / total },
-        { id: 'disparos', val: m.disparos / total },
-        { id: 'escudos', val: m.escudos / total },
-        { id: 'espada', val: m.espada / total },
-        { id: 'supers', val: (m.supers || 0) / total }
-    ];
-    for (let b of bars) {
-        let pct = Math.min(100, b.val * 100);
-        let el = document.getElementById('mem-' + b.id);
-        let valEl = document.getElementById('mem-' + b.id + '-val');
-        if (el) el.style.width = pct + '%';
-        if (valEl) valEl.textContent = Math.round(pct) + '%';
-    }
-}
-
-// =============================================
-// ACTUALIZAR HISTORIAL
-// =============================================
-function updateHistoryPanel() {
-    const el = document.getElementById('history-list');
-    if (!nemesis.historial || nemesis.historial.length === 0) return;
-
-    let html = '';
-    let recent = nemesis.historial.slice(-10).reverse();
-    for (let i = 0; i < recent.length; i++) {
-        let ronda = nemesis.historial.length - i;
-        let isWin = recent[i] === 'derrota'; // derrota del némesis = victoria del jugador
-        html += `<div class="${isWin ? 'h-win' : 'h-lose'}">RONDA ${ronda}: ${isWin ? '▶ NÉMESIS DERROTADO' : '▶ JUGADOR ELIMINADO'}</div>`;
-    }
-    el.innerHTML = html;
-}
-
-// =============================================
-// NOTIFICACIÓN DE RASGO
-// =============================================
-function showTraitNotification(traitName) {
-    const el = document.getElementById('trait-notif');
-    el.textContent = `⬡ NUEVO RASGO: ${traitName}`;
-    el.classList.remove('show');
-    void el.offsetWidth; // reflow
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 2600);
 }
 
 // =============================================
@@ -1007,41 +557,26 @@ class Fighter {
         this.y = GROUND - this.h;
         this.vy = 0;
         this.onGround = true;
+        this.onPlatform = null;
         this.crouching = false;
-
         this.hp = 100;
         this.maxHp = 100;
         this.power = 0;
-
         this.bullets = 10;
         this.maxBullets = 10;
         this.reloading = false;
-        this.reloadTimer = 0;
-
         this.shieldActive = false;
         this.shieldHP = 3;
         this.shieldMaxHP = 3;
         this.shieldCooldown = false;
-
         this.swordAttacking = false;
         this.swordTimer = 0;
-
         this.charging = false;
         this.chargeVal = 0;
-
         this.hitFlash = 0;
         this.legPhase = 0;
-
-        // Para rasgo Fantasma
-        this.ghostAlpha = 1.0;
-        // Para rasgo Inmortal
-        this.immortalGlow = 0;
-        // Para rasgo Vengador
-        this.vengeanceActive = false;
+        this.lavaContactTime = 0;
     }
-
-    get usingGun() { return this.bullets > 0 && !this.reloading; }
-    get usingSword() { return !this.usingGun; }
 
     activateShield() {
         if (this.shieldCooldown || this.shieldActive) return false;
@@ -1061,7 +596,6 @@ class Fighter {
         this.shieldHP--;
         if (this.shieldHP <= 0) {
             this.deactivateShield();
-            if (!this.isPlayer) nemesisSpeak('shieldBreak');
         }
         return true;
     }
@@ -1069,14 +603,9 @@ class Fighter {
     startReload() {
         if (this.reloading) return;
         this.reloading = true;
-        // Rasgo Fantasma: semitransparente al recargar
-        if (!this.isPlayer && nemesis.rasgos.includes('Fantasma')) {
-            this.ghostAlpha = 0.35;
-        }
         setTimeout(() => {
             this.bullets = this.maxBullets;
             this.reloading = false;
-            this.ghostAlpha = 1.0;
         }, 5000);
     }
 
@@ -1087,45 +616,100 @@ class Fighter {
     }
 
     update(dt) {
-        if (!this.onGround) {
+        // Gravedad
+        if (!this.onGround && !this.onPlatform) {
             this.vy += 0.7;
         }
         this.y += this.vy;
 
+        // Colisión con suelo
         if (this.y + this.h >= GROUND) {
             this.y = GROUND - this.h;
             this.vy = 0;
             this.onGround = true;
+            this.onPlatform = null;
+
+            // Daño por lava (SOLO AL JUGADOR)
+            if (this.isPlayer && terrain.lava && !this.shieldActive) {
+                this.hp -= 0.15; // Daño muy leve por frame (quemadura gradual)
+                this.hitFlash = 3;
+            }
+
+            // Daño por púas (SOLO AL JUGADOR)
+            if (this.isPlayer) {
+                for (let spike of terrain.spikes) {
+                    if (this.x < spike.x + 30 && this.x + this.w > spike.x) {
+                        if (!this.shieldActive) {
+                            this.hp -= 8; // Daño reducido (no es muerte instantánea)
+                            this.hitFlash = 8;
+                            // Pequeño impulso hacia arriba al pincharse
+                            this.vy = -5;
+                            this.onGround = false;
+                        }
+                    }
+                }
+            }
         }
 
+        // Colisión con plataformas flotantes
+        this.onPlatform = null;
+        for (let plat of terrain.platforms) {
+            if (this.vy >= 0 && this.y + this.h <= plat.y + 5 && this.y + this.h + this.vy >= plat.y &&
+                this.x < plat.x + plat.w && this.x + this.w > plat.x) {
+                this.y = plat.y - this.h;
+                this.vy = 0;
+                this.onGround = true;
+                this.onPlatform = plat;
+                break;
+            }
+        }
+
+        // Colisión con paredes móviles
+        for (let wall of terrain.walls) {
+            if (this.x < wall.x + wall.w && this.x + this.w > wall.x &&
+                this.y < wall.y + wall.h && this.y + this.h > wall.y) {
+                // Empujar
+                if (this.x < wall.x + wall.w / 2) {
+                    this.x = wall.x - this.w - 5;
+                } else {
+                    this.x = wall.x + wall.w + 5;
+                }
+                // Daño solo al jugador
+                if (this.isPlayer && !this.shieldActive) {
+                    this.hp -= 5;
+                    this.hitFlash = 5;
+                }
+            }
+        }
+
+        // Límites horizontales
         this.x = Math.max(0, Math.min(canvas.width - this.w, this.x));
 
-        // Power — Táctico acelera la carga
-        let powerRate = 0.04;
-        if (!this.isPlayer && nemesis.rasgos.includes('Táctico')) powerRate *= 1.3;
-        if (this.power < 100) this.power += powerRate * (this.isPlayer ? 1 : nemesis.dificultad);
+        // Power
+        if (this.power < 100) this.power += 0.04 * (this.isPlayer ? 1 : nemesis.dificultad);
 
-        if (this.charging && this.usingGun) {
+        // Carga
+        if (this.charging && this.bullets > 0) {
             this.chargeVal = Math.min(100, this.chargeVal + 3);
         }
 
+        // Recarga automática
         if (this.bullets <= 0 && !this.reloading) {
             this.startReload();
         }
 
+        // Espada timer
         if (this.swordAttacking) {
             this.swordTimer--;
             if (this.swordTimer <= 0) this.swordAttacking = false;
         }
 
         if (this.hitFlash > 0) this.hitFlash--;
-        if (this.immortalGlow > 0) this.immortalGlow--;
         if (this.onGround) this.legPhase += 0.2;
     }
 
     draw() {
         ctx.save();
-        ctx.globalAlpha = this.ghostAlpha;
 
         let cx = this.x + this.w / 2;
         let cy = this.y;
@@ -1140,42 +724,14 @@ class Fighter {
             ctx.stroke();
             ctx.fillStyle = this.isPlayer ? `rgba(0,255,242,${alpha * 0.3})` : `rgba(255,100,0,${alpha * 0.3})`;
             ctx.fill();
-            for (let i = 0; i < this.shieldMaxHP; i++) {
-                let angle = -Math.PI / 2 + (i / this.shieldMaxHP) * Math.PI * 2;
-                let ex = cx + Math.cos(angle) * 62;
-                let ey = (cy + this.h / 2) + Math.sin(angle) * 62;
-                ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI * 2);
-                ctx.fillStyle = i < this.shieldHP ? (this.isPlayer ? '#00fff2' : '#ff7700') : '#333';
-                ctx.fill();
-            }
-        }
-
-        // Inmortal glow
-        if (this.immortalGlow > 0) {
-            let g = this.immortalGlow / 30;
-            ctx.beginPath();
-            ctx.arc(cx, cy + this.h / 2, 50, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,215,0,${g * 0.3})`;
-            ctx.fill();
-        }
-
-        // Vengador aura
-        if (!this.isPlayer && nemesis.rasgos.includes('Vengador') &&
-            nemesis.historial.length > 0 &&
-            nemesis.historial[nemesis.historial.length-1] === 'derrota') {
-            let pulse = 0.2 + Math.sin(Date.now() * 0.005) * 0.1;
-            ctx.beginPath();
-            ctx.arc(cx, cy + this.h / 2, 40, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,60,0,${pulse})`;
-            ctx.fill();
         }
 
         // Hit flash
         if (this.hitFlash > 0) {
             ctx.fillStyle = 'white';
-            ctx.globalAlpha = 0.6 * this.ghostAlpha;
+            ctx.globalAlpha = 0.6;
             ctx.fillRect(this.x, this.y, this.w, this.h);
-            ctx.globalAlpha = this.ghostAlpha;
+            ctx.globalAlpha = 1;
         }
 
         let drawH = this.crouching ? this.h * 0.6 : this.h;
@@ -1198,7 +754,7 @@ class Fighter {
         }
 
         // Arma
-        if (this.usingGun) {
+        if (this.bullets > 0) {
             let gx = this.facingRight ? this.x + this.w : this.x - 18;
             let gy = drawY + 16;
             ctx.fillStyle = '#888';
@@ -1226,6 +782,9 @@ class Fighter {
 
         ctx.restore();
     }
+
+    get usingGun() { return this.bullets > 0 && !this.reloading; }
+    get usingSword() { return !this.usingGun; }
 }
 
 // =============================================
@@ -1239,14 +798,6 @@ function shoot(owner, isSuper = false) {
     let isBig = !isSuper && owner.chargeVal >= 80;
     let cost = isSuper ? 0 : (isBig ? 3 : 1);
     let damage = isSuper ? 55 : (isBig ? 32 : 14);
-
-    // Rasgo Vengador: +30% daño
-    if (!owner.isPlayer && nemesis.rasgos.includes('Vengador') &&
-        nemesis.historial.length > 0 &&
-        nemesis.historial[nemesis.historial.length-1] === 'derrota') {
-        damage = Math.floor(damage * 1.3);
-    }
-
     let speed = owner.facingRight ? 13 : -13;
 
     if (!isSuper) {
@@ -1268,19 +819,9 @@ function shoot(owner, isSuper = false) {
 }
 
 // =============================================
-// IA NÉMESIS MEJORADA
+// IA NÉMESIS CON APRENDIZAJE
 // =============================================
 let aiTimer = 0;
-let lastAISpeakTime = 0;
-const AI_SPEAK_COOLDOWN = 8000; // ms entre frases
-
-function maybeSpeak(situation, context = '') {
-    let now = Date.now();
-    if (now - lastAISpeakTime > AI_SPEAK_COOLDOWN) {
-        lastAISpeakTime = now;
-        nemesisSpeak(situation, context);
-    }
-}
 
 function handleIA() {
     if (isGameOver) return;
@@ -1291,96 +832,62 @@ function handleIA() {
 
     e.facingRight = p.x > e.x;
 
-    // RASGO REFLEJOS: bloquear proyectiles entrantes
-    if (nemesis.rasgos.includes("Reflejos")) {
-        let incoming = projectiles.find(pr => pr.owner === p && Math.abs(pr.x - e.x) < 180);
-        if (incoming && !e.shieldActive && !e.shieldCooldown) {
-            e.activateShield();
-        }
-    }
-
-    // RASGO ROMPE-ESCUDOS: super si jugador tiene escudo
-    if (nemesis.rasgos.includes("RompeEscudos") && p.shieldActive && e.power >= 100) {
-        shoot(e, true);
-        maybeSpeak('shieldBreak');
-        return;
-    }
-
-    // Reacciones a HP bajo
-    if (e.hp < 30 && Math.random() < 0.002) {
-        maybeSpeak('lowHP');
-    }
-    if (p.hp < 25 && Math.random() < 0.002) {
-        maybeSpeak('playerLowHP');
-    }
-
     if (aiTimer > 0) return;
     aiTimer = Math.floor(30 / nemesis.dificultad);
 
-    let playerJumping = !p.onGround;
-
-    // RASGO TÁCTICO: cambiar entre pistola y espada según distancia
-    if (nemesis.rasgos.includes('Táctico')) {
-        if (dist < 80 && e.usingGun && e.bullets > 0) {
-            // Forzar espada en cuerpo a cuerpo
-        } else if (dist > 200 && !e.usingGun) {
-            // Forzar pistola a distancia
+    // IA ADAPTATIVA: usar contramedidas detectadas
+    let counters = analyzer.generateCountermeasures();
+    
+    // Si hay paredes, el Némesis intenta empujar al jugador hacia ellas
+    if (terrain.walls.length > 0) {
+        let wall = terrain.walls[0];
+        if (p.x > wall.x) { // Jugador a la derecha de la pared
+            // Némesis intenta ponerse a la derecha del jugador para empujarlo a la izquierda
+            if (e.x < p.x + 40) e.x += 4;
+        } else {
+            // Némesis intenta ponerse a la izquierda del jugador para empujarlo a la derecha
+            if (e.x > p.x - 40) e.x -= 4;
         }
     }
 
-    if (e.usingGun) {
-        let targetDist = nemesis.rasgos.includes('Cazador') ? 120 : 200;
+    // Si hay lava, el Némesis es inmune pero sabe que el jugador saltará
+    // Por lo tanto, el Némesis se queda en el suelo para disparar hacia arriba
+    if (terrain.lava) {
+        if (p.y < GROUND - 100) { // Jugador saltando por la lava
+            if (Math.random() < 0.08) shoot(e); // Disparar más a menudo al aire
+        }
+    }
 
+    // Si hay plataformas, el Némesis las usa para disparar desde arriba
+    if (terrain.platforms.length > 0 && e.onGround && Math.random() < 0.1) {
+        e.vy = -14;
+        e.onGround = false;
+    }
+
+    // Combate básico
+    if (e.usingGun) {
+        let targetDist = 200;
         if (dist > targetDist + 40) {
-            let speed = nemesis.rasgos.includes('Cazador') ? 4.5 : 3;
-            e.x += (e.facingRight ? 1 : -1) * speed * nemesis.dificultad;
+            e.x += (e.facingRight ? 1 : -1) * 3 * nemesis.dificultad;
         } else if (dist < targetDist - 40) {
             e.x -= (e.facingRight ? 1 : -1) * 2;
         }
 
-        let shouldShoot = !(nemesis.rasgos.includes("Antiaéreo") && playerJumping);
-        if (shouldShoot) {
-            let chance = 0.04 * nemesis.dificultad;
-            if (Math.random() < chance) {
-                if (Math.random() < 0.25 && !e.charging) {
-                    e.charging = true;
-                    setTimeout(() => {
-                        shoot(e);
-                        e.charging = false;
-                    }, 600 / nemesis.dificultad);
-                } else {
-                    shoot(e);
-                }
-            }
+        if (Math.random() < 0.04 * nemesis.dificultad) {
+            shoot(e);
         }
     } else {
-        let moveSpeed = 4 * nemesis.dificultad;
-        if (nemesis.rasgos.includes("Berserker")) moveSpeed *= 1.4;
-        if (nemesis.rasgos.includes('Cazador')) moveSpeed *= 1.2;
-
         if (dist > 60) {
-            e.x += (e.facingRight ? 1 : -1) * moveSpeed;
+            e.x += (e.facingRight ? 1 : -1) * 4 * nemesis.dificultad;
         } else {
             if (Math.abs(e.y - p.y) < 80) {
                 e.swordAttack();
             }
         }
-
-        if (Math.random() < 0.05 && e.onGround) {
-            e.vy = -14;
-            e.onGround = false;
-        }
     }
 
-    // Super ataque
     if (e.power >= 100 && Math.random() < 0.3) {
         shoot(e, true);
-    }
-
-    // RASGO CAZADOR: saltar hacia el jugador si está en el aire
-    if (nemesis.rasgos.includes('Cazador') && playerJumping && e.onGround && Math.random() < 0.15) {
-        e.vy = -14;
-        e.onGround = false;
     }
 }
 
@@ -1389,47 +896,28 @@ function handleIA() {
 // =============================================
 let player, enemy, isGameOver;
 let keys = {};
-let lastTime = 0;
-let roundStats = { playerJumps: 0, playerShots: 0, playerShields: 0, playerSword: 0, playerSupers: 0 };
+let roundStats = { playerJumps: 0, playerShots: 0, playerShields: 0, playerSword: 0 };
 
 function init() {
     player = new Fighter(80, true, '#00d2ff', true);
     enemy  = new Fighter(670, false, '#ff3c00', false);
     projectiles = [];
     isGameOver = false;
-    roundStats = { playerJumps: 0, playerShots: 0, playerShields: 0, playerSword: 0, playerSupers: 0 };
+    roundStats = { playerJumps: 0, playerShots: 0, playerShields: 0, playerSword: 0 };
     aiTimer = 30;
     document.getElementById('overlay').classList.remove('active');
+    
+    // Generar terreno basado en contramedidas
+    let counters = analyzer.generateCountermeasures();
+    generateTerrain(counters);
+    
     updateHUD();
-    updateMemoryPanel();
-    updateHistoryPanel();
-    drawTraitsTree();
+    updateStrategyDisplay();
 }
 
 function resetGame() {
     init();
     requestAnimationFrame(loop);
-    // Frase de inicio de ronda
-    setTimeout(() => nemesisSpeak('roundStart'), 500);
-}
-
-function hardReset() {
-    if (confirm('¿Borrar toda la memoria del Némesis? Esto reinicia su evolución.')) {
-        localStorage.removeItem('nemesis_v3');
-        nemesis = {
-            nombre: "VULKAN",
-            nivel: 1,
-            dificultad: 1.0,
-            memoria: { saltos: 0, disparos: 0, escudos: 0, espada: 0, supers: 0, total: 1 },
-            rasgos: [],
-            historial: [],
-            totalRondas: 0,
-            victorias: 0,
-            derrotas: 0,
-            comportamiento: { agresivo: 0, defensivo: 0, aereo: 0, distancia: 0 }
-        };
-        resetGame();
-    }
 }
 
 // =============================================
@@ -1446,6 +934,10 @@ document.addEventListener('keydown', (e) => {
         roundStats.playerJumps++;
         nemesis.memoria.saltos++;
         nemesis.memoria.total++;
+        analyzer.recordAction('jump', {
+            playerX: player.x, playerY: player.y, playerVY: player.vy,
+            playerOnGround: player.onGround, enemyX: enemy.x
+        });
     }
 
     if (e.code === 'KeyA') {
@@ -1453,6 +945,10 @@ document.addEventListener('keydown', (e) => {
             roundStats.playerShields++;
             nemesis.memoria.escudos++;
             nemesis.memoria.total++;
+            analyzer.recordAction('shield', {
+                playerX: player.x, playerY: player.y, playerVY: player.vy,
+                playerOnGround: player.onGround, enemyX: enemy.x
+            });
         }
     }
 
@@ -1464,14 +960,15 @@ document.addEventListener('keydown', (e) => {
             roundStats.playerSword++;
             nemesis.memoria.espada++;
             nemesis.memoria.total++;
+            analyzer.recordAction('sword', {
+                playerX: player.x, playerY: player.y, playerVY: player.vy,
+                playerOnGround: player.onGround, enemyX: enemy.x
+            });
         }
     }
 
     if (e.code === 'Digit1' && player.power >= 100) {
         shoot(player, true);
-        roundStats.playerSupers++;
-        nemesis.memoria.supers = (nemesis.memoria.supers || 0) + 1;
-        nemesis.memoria.total++;
     }
 });
 
@@ -1484,6 +981,10 @@ document.addEventListener('keyup', (e) => {
         roundStats.playerShots++;
         nemesis.memoria.disparos++;
         nemesis.memoria.total++;
+        analyzer.recordAction('shoot', {
+            playerX: player.x, playerY: player.y, playerVY: player.vy,
+            playerOnGround: player.onGround, enemyX: enemy.x
+        });
     }
 });
 
@@ -1499,9 +1000,7 @@ function checkSwordCollision(attacker, target) {
     if (target.shieldActive) {
         target.shieldHit();
     } else {
-        let dmg = 18;
-        if (!attacker.isPlayer && nemesis.rasgos.includes('Berserker')) dmg = 24;
-        target.hp -= dmg;
+        target.hp -= 18;
         target.hitFlash = 8;
     }
     attacker.swordAttacking = false;
@@ -1549,22 +1048,8 @@ function updateHUD() {
     }
 
     document.getElementById('nem-name').innerText = nemesis.nombre;
-    document.getElementById('nem-level').innerText = `NIV.${nemesis.nivel} · DIF ${nemesis.dificultad.toFixed(1)}x · ${nemesis.totalRondas} RONDAS`;
-
-    // Mostrar rasgos con colores
-    if (nemesis.rasgos.length) {
-        let td_map = {};
-        for (let td of TRAIT_DEFS) td_map[td.id] = td;
-        document.getElementById('nem-traits').innerHTML = nemesis.rasgos
-            .map(r => {
-                let td = td_map[r];
-                let col = td ? td.color : '#0f0';
-                return `<span style="color:${col}">⬡${r}</span>`;
-            })
-            .join(' ');
-    } else {
-        document.getElementById('nem-traits').innerHTML = '<span style="color:#333">Sin rasgos aprendidos</span>';
-    }
+    document.getElementById('nem-level').innerText = `NIV.${nemesis.nivel} · DIF ${nemesis.dificultad.toFixed(1)}x`;
+    document.getElementById('nem-traits').innerHTML = `<span style="color:#0f0">APRENDIZAJE: ${Math.min(100, Math.round(Object.keys(analyzer.patterns).length * 20))}%</span>`;
 
     let p2ammo = document.getElementById('p2-ammo');
     p2ammo.innerHTML = enemy.reloading ? '<span style="color:#ff3c00">RECARGANDO...</span>' : `BALAS: ${enemy.bullets}/${enemy.maxBullets}`;
@@ -1573,8 +1058,51 @@ function updateHUD() {
         : (enemy.shieldActive ? `ESCUDO: <span style="color:#ff7700">ACTIVO[${enemy.shieldHP}]</span>` : 'ESCUDO: <span style="color:#444">LISTO</span>');
     document.getElementById('p2-weapon').innerHTML = enemy.usingGun ? 'ARMA: <span>PISTOLA</span>' : 'ARMA: <span style="color:#ff3c00">ESPADA</span>';
 
-    // Actualizar memoria en panel lateral
     updateMemoryPanel();
+}
+
+function updateMemoryPanel() {
+    let m = nemesis.memoria;
+    let total = Math.max(m.total, 1);
+    const bars = [
+        { id: 'saltos', val: m.saltos / total },
+        { id: 'disparos', val: m.disparos / total },
+        { id: 'escudos', val: m.escudos / total },
+        { id: 'espada', val: m.espada / total }
+    ];
+    for (let b of bars) {
+        let pct = Math.min(100, b.val * 100);
+        let el = document.getElementById('mem-' + b.id);
+        let valEl = document.getElementById('mem-' + b.id + '-val');
+        if (el) el.style.width = pct + '%';
+        if (valEl) valEl.textContent = Math.round(pct) + '%';
+    }
+}
+
+function updateStrategyDisplay() {
+    let patterns = analyzer.getTopPatterns();
+    let counters = analyzer.generateCountermeasures();
+    
+    let html = '';
+    if (patterns.length === 0) {
+        html = '<div style="color:#333">Analizando patrones...</div>';
+    } else {
+        html = '<div style="color:#0f0;font-size:8px">';
+        for (let p of patterns) {
+            html += `<div>▶ ${p.name}: ${p.count}x detectado</div>`;
+        }
+        html += '</div>';
+    }
+
+    if (counters.length > 0) {
+        html += '<div style="color:#ff6622;font-size:8px;margin-top:4px">';
+        for (let c of counters) {
+            html += `<div>⬡ ${c.reason}</div>`;
+        }
+        html += '</div>';
+    }
+
+    document.getElementById('ai-strategy').innerHTML = html;
 }
 
 // =============================================
@@ -1593,14 +1121,57 @@ function drawWorld() {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
     }
 
+    // LAVA
+    if (terrain.lava) {
+        ctx.fillStyle = 'rgba(255,100,0,0.3)';
+        ctx.fillRect(0, GROUND, canvas.width, canvas.height - GROUND);
+        
+        let wave = Math.sin(Date.now() * 0.005) * 3;
+        ctx.strokeStyle = 'rgba(255,60,0,0.6)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, GROUND + wave);
+        for (let x = 0; x < canvas.width; x += 20) {
+            ctx.lineTo(x, GROUND + wave + Math.sin(x * 0.02) * 5);
+        }
+        ctx.stroke();
+    }
+
+    // Suelo normal
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, GROUND, canvas.width, canvas.height - GROUND);
-    ctx.fillStyle = '#00d2ff';
-    ctx.fillRect(0, GROUND, 200, 1);
-    ctx.fillStyle = '#333';
-    ctx.fillRect(200, GROUND, canvas.width - 400, 1);
+
+    // PÚAS
     ctx.fillStyle = '#ff3c00';
-    ctx.fillRect(canvas.width - 200, GROUND, 200, 1);
+    for (let spike of terrain.spikes) {
+        ctx.beginPath();
+        ctx.moveTo(spike.x, spike.y);
+        ctx.lineTo(spike.x + 15, spike.y - spike.h);
+        ctx.lineTo(spike.x + 30, spike.y);
+        ctx.fill();
+    }
+
+    // PLATAFORMAS FLOTANTES
+    ctx.fillStyle = 'rgba(0,210,255,0.4)';
+    ctx.strokeStyle = '#00d2ff';
+    ctx.lineWidth = 2;
+    for (let plat of terrain.platforms) {
+        ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+        ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
+    }
+
+    // PAREDES MÓVILES
+    ctx.fillStyle = 'rgba(255,60,0,0.3)';
+    ctx.strokeStyle = '#ff3c00';
+    ctx.lineWidth = 2;
+    for (let wall of terrain.walls) {
+        if (wall.moving) {
+            wall.x += wall.speed;
+            if (wall.x < 100 || wall.x > 600) wall.speed *= -1;
+        }
+        ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
+        ctx.strokeRect(wall.x, wall.y, wall.w, wall.h);
+    }
 
     ctx.strokeStyle = '#1a1a1a';
     ctx.setLineDash([4, 8]);
@@ -1684,26 +1255,21 @@ function loop(timestamp) {
     updateHUD();
     updateParticles();
 
-    // Fin de ronda
     if ((player.hp <= 0 || enemy.hp <= 0) && !isGameOver) {
         isGameOver = true;
         let playerWon = player.hp > 0;
 
-        // Rasgo Inmortal: recuperar HP si el némesis gana
-        if (!playerWon && nemesis.rasgos.includes('Inmortal')) {
-            enemy.hp = Math.min(100, enemy.hp + 5);
-            enemy.immortalGlow = 60;
+        nemesis.totalRondas++;
+        if (playerWon) {
+            nemesis.nivel++;
+            nemesis.dificultad = Math.min(3.0, nemesis.dificultad + 0.15);
+            nemesis.derrotas++;
+        } else {
+            nemesis.victorias++;
         }
 
-        let { logs, newTraits } = evolucionarNemesis(playerWon);
         saveNemesis();
-
-        // Notificaciones de nuevos rasgos
-        for (let nt of newTraits) {
-            setTimeout(() => showTraitNotification(nt.label), 600);
-        }
-
-        setTimeout(() => showResult(playerWon, logs), 400);
+        setTimeout(() => showResult(playerWon), 400);
     } else {
         requestAnimationFrame(loop);
     }
@@ -1758,7 +1324,7 @@ function updateParticles() {
 // =============================================
 // RESULTADO
 // =============================================
-async function showResult(playerWon, evolLogs) {
+function showResult(playerWon) {
     let overlay = document.getElementById('overlay');
     let title = document.getElementById('res-title');
     let evol = document.getElementById('res-evol');
@@ -1768,81 +1334,34 @@ async function showResult(playerWon, evolLogs) {
     title.innerText = playerWon ? 'NÉMESIS DERROTADO' : 'HAS CAÍDO';
     title.className = playerWon ? 'win' : 'lose';
 
-    // Frase IA en pantalla de resultado
-    aiQuote.textContent = '...';
-    let phrase = await nemesisSpeak(playerWon ? 'playerWins' : 'playerLoses',
-        playerWon ? `El jugador usó ${roundStats.playerJumps} saltos y ${roundStats.playerShots} disparos.`
-                  : `Eliminé al jugador con ${roundStats.playerShots} disparos recibidos.`);
-    aiQuote.textContent = `"${phrase}"`;
+    let patterns = analyzer.getTopPatterns();
+    let analysis = patterns.length > 0
+        ? `PATRONES DETECTADOS: ${patterns.map(p => p.name).join(', ')}`
+        : 'COMPORTAMIENTO IMPREDECIBLE';
 
-    evol.innerHTML = evolLogs.length
-        ? evolLogs.join('<br>')
-        : playerWon
-            ? 'EL NÉMESIS HA REGISTRADO TUS PATRONES DE COMBATE.'
-            : 'EL NÉMESIS HA DOMINADO ESTE ENCUENTRO.';
+    aiQuote.textContent = `"${analysis}"`;
+
+    let trapsUsed = terrain.activeTraps.length > 0
+        ? `TRAMPAS ACTIVADAS: ${terrain.activeTraps.join(', ')}`
+        : 'SIN TRAMPAS ACTIVADAS';
+
+    evol.innerHTML = trapsUsed;
 
     stats.innerHTML =
         `RONDA ${nemesis.totalRondas} &nbsp;|&nbsp; VICTORIAS: ${nemesis.victorias} &nbsp;|&nbsp; DERROTAS: ${nemesis.derrotas}<br>` +
-        `SALTOS: ${roundStats.playerJumps} &nbsp; DISPAROS: ${roundStats.playerShots} &nbsp; ESCUDOS: ${roundStats.playerShields} &nbsp; ESPADA: ${roundStats.playerSword}<br>` +
-        `NIVEL NÉMESIS: ${nemesis.nivel} &nbsp; DIFICULTAD: ${nemesis.dificultad.toFixed(2)}x &nbsp; RASGOS: ${nemesis.rasgos.length}`;
+        `NIVEL NÉMESIS: ${nemesis.nivel} &nbsp; DIFICULTAD: ${nemesis.dificultad.toFixed(2)}x<br>` +
+        `PATRONES APRENDIDOS: ${Object.keys(analyzer.patterns).length}`;
 
     overlay.classList.add('active');
-    drawTraitsTree();
-    updateHistoryPanel();
+    updateStrategyDisplay();
 }
-
-// =============================================
-// CONFIGURACIÓN DE API KEY DESDE UI
-// =============================================
-function toggleCfg() {
-    let panel = document.getElementById('api-config-panel');
-    let btn = document.getElementById('cfg-toggle');
-    let visible = panel.style.display !== 'none';
-    panel.style.display = visible ? 'none' : 'block';
-    btn.style.display = visible ? 'block' : 'none';
-    if (!visible) {
-        let saved = localStorage.getItem('nemesis_api_key') || '';
-        document.getElementById('api-key-input').value = saved ? '••••••••••••••••' : '';
-    }
-}
-
-async function saveApiKey() {
-    let val = document.getElementById('api-key-input').value.trim();
-    if (!val || val.startsWith('•')) {
-        document.getElementById('cfg-status').innerHTML = '<span style="color:#555">Sin cambios.</span>';
-        return;
-    }
-    localStorage.setItem('nemesis_api_key', val);
-    AI_CONFIG.apiKey = val;
-    document.getElementById('cfg-status').innerHTML = '<span style="color:#ffaa00">Verificando conexión...</span>';
-    let ok = await checkAI();
-    document.getElementById('cfg-status').innerHTML = ok
-        ? '<span style="color:#00ff88">✓ IA ACTIVADA CORRECTAMENTE</span>'
-        : '<span style="color:#ff3c00">✗ Error de conexión. Verifica tu API key.</span>';
-}
-
-function clearApiKey() {
-    localStorage.removeItem('nemesis_api_key');
-    AI_CONFIG.apiKey = '';
-    aiOnline = false;
-    document.getElementById('api-key-input').value = '';
-    document.getElementById('cfg-status').innerHTML = '<span style="color:#555">API key eliminada. Modo offline.</span>';
-    document.getElementById('ai-conn-status').textContent = '● IA OFFLINE';
-    document.getElementById('ai-conn-status').className = 'ai-off';
-}
-
-// Cargar API key guardada
-const savedKey = localStorage.getItem('nemesis_api_key');
-if (savedKey) AI_CONFIG.apiKey = savedKey;
 
 // =============================================
 // INICIALIZACIÓN
 // =============================================
-async function start() {
-    await checkAI();
+function start() {
     init();
     requestAnimationFrame(loop);
-    setTimeout(() => nemesisSpeak('roundStart'), 800);
 }
 
 start();
