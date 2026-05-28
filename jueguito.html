@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SISTEMA NÉMESIS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #030303; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Share Tech Mono', monospace; color: white; overflow: hidden; }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            border: 1px solid #1a1a1a;
+            box-shadow: 0 0 60px rgba(255,60,0,0.15), 0 0 120px rgba(0,210,255,0.08);
+        }
+
+        /* ===== HUD ===== */
+        .hud {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; background: #0a0a0a;
+            border-bottom: 1px solid #222;
+        }
+
+        .fighter-hud { width: 230px; }
+        .fighter-hud.right { text-align: right; }
+
+        .fighter-label { font-size: 9px; letter-spacing: 3px; color: #555; margin-bottom: 5px; }
+        .fighter-hud.right .fighter-label { color: #ff3c00; }
+        .fighter-hud:not(.right) .fighter-label { color: #00d2ff; }
+
+        .hp-bar { height: 8px; background: #111; border: 1px solid #222; position: relative; overflow: hidden; }
+        .hp-fill { height: 100%; transition: width 0.2s; }
+        #p1-hp-fill { background: linear-gradient(90deg, #0099bb, #00d2ff); }
+        #p2-hp-fill { background: linear-gradient(90deg, #ff3c00, #ff7700); }
+        .fighter-hud.right .hp-bar { }
+        .fighter-hud.right #p2-hp-fill { float: right; }
+
+        .power-bar { height: 3px; background: #111; margin-top: 3px; }
+        .power-fill { height: 100%; background: gold; transition: width 0.3s; }
+        .power-fill.ready { animation: pulse-gold 0.4s infinite alternate; }
+        @keyframes pulse-gold { from { background: gold; } to { background: white; } }
+
+        .hud-details { font-size: 9px; margin-top: 6px; line-height: 1.6; color: #666; }
+        .hud-details span { color: #aaa; }
+        .hud-details .active { color: #00fff2; }
+        .hud-details .warning { color: #ff3c00; }
+        .hud-details .ok { color: #00ff88; }
+
+        /* Nemesis Center */
+        .nem-center { flex: 1; text-align: center; padding: 0 10px; }
+        #nem-name { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 13px; color: #ff3c00; letter-spacing: 2px; }
+        #nem-level { font-size: 9px; color: #555; margin-top: 2px; }
+        #nem-traits { font-size: 8px; color: #0f0; margin-top: 4px; line-height: 1.5; }
+
+        /* Controls hint */
+        .controls-hint {
+            background: #080808; padding: 5px 16px;
+            font-size: 8px; color: #333; letter-spacing: 1px; display: flex; justify-content: space-between;
+            border-bottom: 1px solid #111;
+        }
+        .controls-hint span { color: #555; }
+
+        canvas { display: block; }
+
+        /* ===== OVERLAY ===== */
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100;
+            font-family: 'Orbitron', sans-serif;
+        }
+        #overlay.active { display: flex; }
+        #res-title { font-size: 28px; font-weight: 900; letter-spacing: 4px; margin-bottom: 8px; }
+        #res-title.win { color: #00d2ff; text-shadow: 0 0 30px #00d2ff; }
+        #res-title.lose { color: #ff3c00; text-shadow: 0 0 30px #ff3c00; }
+        #res-sub { font-size: 10px; color: #555; letter-spacing: 3px; margin-bottom: 24px; font-family: 'Share Tech Mono', monospace; }
+        #res-evol { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #0f0; margin-bottom: 30px; line-height: 2; text-align: center; }
+        #res-stats { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #444; margin-bottom: 24px; line-height: 2; }
+        .next-btn {
+            padding: 12px 40px; background: transparent; border: 1px solid #ff3c00;
+            color: #ff3c00; font-family: 'Orbitron', sans-serif; font-size: 11px;
+            letter-spacing: 3px; cursor: pointer; transition: all 0.2s;
+        }
+        .next-btn:hover { background: #ff3c00; color: white; }
+
+        /* Scanline overlay */
+        #game-container::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+            pointer-events: none; z-index: 50;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Controls Hint -->
+    <div class="controls-hint">
+        <span>← → MOVER &nbsp; ↑ SALTAR &nbsp; ↓ AGACHAR</span>
+        <span>SPACE: DISPARAR / ESPADA &nbsp; A: ESCUDO &nbsp; 1: SUPER</span>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud">
+        <!-- Player -->
+        <div class="fighter-hud">
+            <div class="fighter-label">◈ JUGADOR</div>
+            <div class="hp-bar"><div id="p1-hp-fill" class="hp-fill" style="width:100%"></div></div>
+            <div class="power-bar"><div id="p1-power" class="power-fill" style="width:0%"></div></div>
+            <div class="hud-details" id="p1-details">
+                <span id="p1-ammo">BALAS: ██████████ 10/10</span><br>
+                <span id="p1-shield-txt">ESCUDO: <span class="ok">LISTO [A]</span></span><br>
+                <span id="p1-weapon">ARMA: <span>PISTOLA</span></span>
+            </div>
+        </div>
+
+        <!-- Nemesis -->
+        <div class="nem-center">
+            <div id="nem-name">VULKAN</div>
+            <div id="nem-level">NIVEL 1</div>
+            <div id="nem-traits">AGRESIVO</div>
+        </div>
+
+        <!-- Enemy -->
+        <div class="fighter-hud right">
+            <div class="fighter-label">NÉMESIS ◈</div>
+            <div class="hp-bar"><div id="p2-hp-fill" class="hp-fill" style="width:100%; margin-left:auto"></div></div>
+            <div class="power-bar"><div id="p2-power" class="power-fill" style="width:0%; margin-left:auto"></div></div>
+            <div class="hud-details" id="p2-details" style="text-align:right">
+                <span id="p2-ammo">BALAS: 10/10</span><br>
+                <span id="p2-shield-txt">ESCUDO: <span class="ok">LISTO</span></span><br>
+                <span id="p2-weapon">ARMA: <span>PISTOLA</span></span>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Overlay -->
+    <div id="overlay">
+        <div id="res-title" class="win">RESULTADO</div>
+        <div id="res-sub">ANÁLISIS DE COMBATE</div>
+        <div id="res-evol"></div>
+        <div id="res-stats"></div>
+        <button class="next-btn" onclick="resetGame()">SIGUIENTE RONDA</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = 800;
+canvas.height = 380;
+
+// =============================================
+// SISTEMA NÉMESIS PERSISTENTE
+// =============================================
+let nemesis = JSON.parse(localStorage.getItem('nemesis_v2')) || {
+    nombre: "VULKAN",
+    nivel: 1,
+    dificultad: 1.0,
+    memoria: { saltos: 0, disparos: 0, escudos: 0, espada: 0, total: 1 },
+    rasgos: []
+};
+
+function saveNemesis() {
+    localStorage.setItem('nemesis_v2', JSON.stringify(nemesis));
+}
+
+function evolucionarNemesis(playerWon) {
+    let m = nemesis.memoria;
+    let total = Math.max(m.total, 1);
+    let sRatio = m.saltos  / total;
+    let dRatio = m.disparos / total;
+    let eRatio = m.escudos / total;
+    let wRatio = m.espada  / total;
+    let logs = [];
+
+    // El némesis aprende si el jugador le derrota
+    if (playerWon) {
+        nemesis.nivel++;
+        nemesis.dificultad = Math.min(2.5, nemesis.dificultad + 0.15);
+
+        if (sRatio > 0.25 && !nemesis.rasgos.includes("Antiaéreo")) {
+            nemesis.rasgos.push("Antiaéreo");
+            logs.push("⬡ NUEVO RASGO: ANTIAÉREO — esquiva ataques aéreos");
+        }
+        if (dRatio > 0.35 && !nemesis.rasgos.includes("Reflejos")) {
+            nemesis.rasgos.push("Reflejos");
+            logs.push("⬡ NUEVO RASGO: REFLEJOS — bloquea disparos");
+        }
+        if (eRatio > 0.25 && !nemesis.rasgos.includes("RompeEscudos")) {
+            nemesis.rasgos.push("RompeEscudos");
+            logs.push("⬡ NUEVO RASGO: ROMPE-ESCUDOS — neutraliza defensa");
+        }
+        if (wRatio > 0.2 && !nemesis.rasgos.includes("Berserker")) {
+            nemesis.rasgos.push("Berserker");
+            logs.push("⬡ NUEVO RASGO: BERSERKER — combate cuerpo a cuerpo agresivo");
+        }
+
+        // Cambio de nombre al subir de nivel
+        const nombres = ["VULKAN","KIRA","NEXUS","SHADE","APEX","DOOM","ZERO","VEX"];
+        if (nemesis.nivel <= nombres.length) nemesis.nombre = nombres[nemesis.nivel - 1];
+    }
+
+    // Olvido gradual (memoria decae)
+    nemesis.memoria.saltos  *= 0.6;
+    nemesis.memoria.disparos *= 0.6;
+    nemesis.memoria.escudos *= 0.6;
+    nemesis.memoria.espada  *= 0.6;
+    nemesis.memoria.total   *= 0.6;
+
+    return logs;
+}
+
+// =============================================
+// CLASE FIGHTER
+// =============================================
+const GROUND = 330;
+
+class Fighter {
+    constructor(x, facingRight, color, isPlayer) {
+        this.startX = x;
+        this.facingRight = facingRight;
+        this.color = color;
+        this.isPlayer = isPlayer;
+        this.w = 44; this.h = 70;
+        this.reset();
+    }
+
+    reset() {
+        this.x = this.startX;
+        this.y = GROUND - this.h;
+        this.vy = 0;
+        this.onGround = true;
+        this.crouching = false;
+
+        this.hp = 100;
+        this.maxHp = 100;
+        this.power = 0;
+
+        // Pistola
+        this.bullets = 10;
+        this.maxBullets = 10;
+        this.reloading = false;
+        this.reloadTimer = 0;
+
+        // Escudo: aguanta 3 golpes
+        this.shieldActive = false;
+        this.shieldHP = 3;
+        this.shieldMaxHP = 3;
+        this.shieldCooldown = false;
+
+        // Espada
+        this.swordAttacking = false;
+        this.swordTimer = 0;
+
+        // Carga de disparo
+        this.charging = false;
+        this.chargeVal = 0;
+
+        // Animación
+        this.hitFlash = 0;
+        this.legPhase = 0;
+    }
+
+    get usingGun() { return this.bullets > 0 && !this.reloading; }
+    get usingSword() { return !this.usingGun; }
+
+    activateShield() {
+        if (this.shieldCooldown || this.shieldActive) return false;
+        this.shieldActive = true;
+        this.shieldHP = this.shieldMaxHP;
+        return true;
+    }
+
+    deactivateShield() {
+        this.shieldActive = false;
+        this.shieldCooldown = true;
+        // 5 segundos de recarga
+        setTimeout(() => { this.shieldCooldown = false; }, 5000);
+    }
+
+    shieldHit() {
+        if (!this.shieldActive) return false;
+        this.shieldHP--;
+        if (this.shieldHP <= 0) {
+            this.deactivateShield();
+        }
+        return true;
+    }
+
+    startReload() {
+        if (this.reloading) return;
+        this.reloading = true;
+        setTimeout(() => {
+            this.bullets = this.maxBullets;
+            this.reloading = false;
+        }, 5000);
+    }
+
+    swordAttack() {
+        if (this.swordAttacking) return;
+        this.swordAttacking = true;
+        this.swordTimer = 18; // frames
+    }
+
+    update(dt) {
+        // Física vertical
+        if (!this.onGround) {
+            this.vy += 0.7;
+        }
+        this.y += this.vy;
+
+        if (this.y + this.h >= GROUND) {
+            this.y = GROUND - this.h;
+            this.vy = 0;
+            this.onGround = true;
+        }
+
+        // Límites horizontales
+        this.x = Math.max(0, Math.min(canvas.width - this.w, this.x));
+
+        // Power
+        if (this.power < 100) this.power += 0.04 * (this.isPlayer ? 1 : nemesis.dificultad);
+
+        // Carga
+        if (this.charging && this.usingGun) {
+            this.chargeVal = Math.min(100, this.chargeVal + 3);
+        }
+
+        // Recarga automática si balas = 0
+        if (this.bullets <= 0 && !this.reloading) {
+            this.startReload();
+        }
+
+        // Espada timer
+        if (this.swordAttacking) {
+            this.swordTimer--;
+            if (this.swordTimer <= 0) this.swordAttacking = false;
+        }
+
+        // Flash de golpe
+        if (this.hitFlash > 0) this.hitFlash--;
+
+        // Animación de piernas
+        if (this.onGround) this.legPhase += 0.2;
+    }
+
+    draw() {
+        ctx.save();
+        let cx = this.x + this.w / 2;
+        let cy = this.y;
+
+        // Escudo visual
+        if (this.shieldActive) {
+            let alpha = 0.3 + Math.sin(Date.now() * 0.01) * 0.1;
+            ctx.beginPath();
+            ctx.arc(cx, cy + this.h / 2, 58, 0, Math.PI * 2);
+            ctx.strokeStyle = this.isPlayer ? `rgba(0,255,242,${alpha + 0.4})` : `rgba(255,100,0,${alpha + 0.4})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = this.isPlayer ? `rgba(0,255,242,${alpha * 0.3})` : `rgba(255,100,0,${alpha * 0.3})`;
+            ctx.fill();
+            // Puntos de vida del escudo
+            for (let i = 0; i < this.shieldMaxHP; i++) {
+                let angle = -Math.PI / 2 + (i / this.shieldMaxHP) * Math.PI * 2;
+                let ex = cx + Math.cos(angle) * 62;
+                let ey = (cy + this.h / 2) + Math.sin(angle) * 62;
+                ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI * 2);
+                ctx.fillStyle = i < this.shieldHP ? (this.isPlayer ? '#00fff2' : '#ff7700') : '#333';
+                ctx.fill();
+            }
+        }
+
+        // Hit flash
+        if (this.hitFlash > 0) {
+            ctx.fillStyle = 'white';
+            ctx.globalAlpha = 0.6;
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+            ctx.globalAlpha = 1;
+        }
+
+        // Agachado
+        let drawH = this.crouching ? this.h * 0.6 : this.h;
+        let drawY = this.crouching ? this.y + this.h * 0.4 : this.y;
+
+        // Cuerpo
+        let bodyColor = this.hitFlash > 0 ? 'white' : this.color;
+        ctx.fillStyle = bodyColor;
+        // Torso
+        ctx.fillRect(this.x + 6, drawY, this.w - 12, drawH * 0.55);
+        // Cabeza
+        ctx.fillRect(this.x + 10, drawY - 22, this.w - 20, 20);
+        // Ojo
+        ctx.fillStyle = this.facingRight ? '#000' : '#000';
+        let eyeX = this.facingRight ? this.x + 26 : this.x + 14;
+        ctx.fillRect(eyeX, drawY - 18, 5, 5);
+
+        if (!this.crouching) {
+            // Piernas animadas
+            let lw = 10, lh = drawH * 0.45;
+            let kick = this.onGround ? Math.sin(this.legPhase) * 4 : 0;
+            ctx.fillStyle = this.color === '#00d2ff' ? '#0088aa' : '#aa2200';
+            ctx.fillRect(this.x + 6, drawY + drawH * 0.55, lw, lh + kick);
+            ctx.fillRect(this.x + this.w - 16, drawY + drawH * 0.55, lw, lh - kick);
+        }
+
+        // Arma
+        if (this.usingGun) {
+            // Pistola
+            let gx = this.facingRight ? this.x + this.w : this.x - 18;
+            let gy = drawY + 16;
+            ctx.fillStyle = '#888';
+            ctx.fillRect(gx, gy, 18, 8);
+            ctx.fillStyle = '#555';
+            ctx.fillRect(gx + (this.facingRight ? 14 : 0), gy - 2, 6, 4);
+
+            // Indicador de carga
+            if (this.chargeVal > 0) {
+                let cw = (this.w * this.chargeVal) / 100;
+                ctx.fillStyle = `rgba(255,220,0,${0.5 + this.chargeVal / 200})`;
+                ctx.fillRect(this.x, drawY - 10, cw, 4);
+            }
+        } else {
+            // Espada
+            let sw = this.swordAttacking ? 60 : 8;
+            let sx = this.facingRight ? this.x + this.w - 4 : this.x - (sw - 4);
+            let sy = this.swordAttacking ? drawY + 10 : drawY + 20;
+            let sh = this.swordAttacking ? 6 : 40;
+
+            // Brillo
+            ctx.shadowColor = '#aaddff';
+            ctx.shadowBlur = this.swordAttacking ? 12 : 4;
+            ctx.fillStyle = this.swordAttacking ? '#ffffff' : '#ccddff';
+            ctx.fillRect(sx, sy, sw, sh);
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.restore();
+    }
+}
+
+// =============================================
+// PROYECTILES
+// =============================================
+let projectiles = [];
+
+function shoot(owner, isSuper = false) {
+    if (!isSuper && (!owner.usingGun || owner.bullets <= 0)) return;
+
+    let isBig = !isSuper && owner.chargeVal >= 80;
+    let cost = isSuper ? 0 : (isBig ? 3 : 1);
+    let damage = isSuper ? 55 : (isBig ? 32 : 14);
+    let speed = owner.facingRight ? 13 : -13;
+
+    if (!isSuper) {
+        if (owner.bullets < cost) return;
+        owner.bullets -= cost;
+    } else {
+        owner.power = 0;
+    }
+    owner.chargeVal = 0;
+
+    projectiles.push({
+        x: owner.facingRight ? owner.x + owner.w + 2 : owner.x - 20,
+        y: owner.y + (owner.crouching ? owner.h * 0.7 : 18),
+        vx: speed * (owner.isPlayer ? 1 : nemesis.dificultad * 0.9),
+        owner, isSuper, isBig,
+        damage,
+        life: 120
+    });
+}
+
+// =============================================
+// IA NÉMESIS
+// =============================================
+let aiTimer = 0;
+let aiAction = null;
+
+function handleIA() {
+    if (isGameOver) return;
+    aiTimer--;
+    let e = enemy;
+    let p = player;
+    let dist = Math.abs(e.x - p.x);
+    let facingPlayer = (e.facingRight && p.x > e.x) || (!e.facingRight && p.x < e.x);
+
+    // Ajustar orientación
+    e.facingRight = p.x > e.x;
+
+    // RASGO REFLEJOS: usar escudo si viene proyectil
+    if (nemesis.rasgos.includes("Reflejos")) {
+        let incoming = projectiles.find(pr => pr.owner === p && Math.abs(pr.x - e.x) < 180);
+        if (incoming && !e.shieldActive && !e.shieldCooldown) {
+            e.activateShield();
+        }
+    }
+
+    // RASGO ROMPE-ESCUDOS: usar super si jugador tiene escudo
+    if (nemesis.rasgos.includes("RompeEscudos") && p.shieldActive && e.power >= 100) {
+        shoot(e, true);
+        return;
+    }
+
+    if (aiTimer > 0) return;
+    aiTimer = Math.floor(30 / nemesis.dificultad);
+
+    // RASGO ANTIAÉREO: esperar a que el jugador aterrice antes de disparar
+    let playerJumping = !p.onGround;
+
+    if (e.usingGun) {
+        // Modo pistola: mantener distancia media
+        let targetDist = 200;
+        if (dist > targetDist + 40) {
+            e.x += (e.facingRight ? 1 : -1) * 3 * nemesis.dificultad;
+        } else if (dist < targetDist - 40) {
+            e.x -= (e.facingRight ? 1 : -1) * 2;
+        }
+
+        let shouldShoot = !(nemesis.rasgos.includes("Antiaéreo") && playerJumping);
+        if (shouldShoot) {
+            let chance = 0.04 * nemesis.dificultad;
+            if (Math.random() < chance) {
+                if (Math.random() < 0.25 && !e.charging) {
+                    // Disparo cargado
+                    e.charging = true;
+                    setTimeout(() => {
+                        shoot(e);
+                        e.charging = false;
+                    }, 600 / nemesis.dificultad);
+                } else {
+                    shoot(e);
+                }
+            }
+        }
+    } else {
+        // Modo espada: acercarse y atacar
+        let moveSpeed = 4 * nemesis.dificultad;
+        if (nemesis.rasgos.includes("Berserker")) moveSpeed *= 1.4;
+
+        if (dist > 60) {
+            e.x += (e.facingRight ? 1 : -1) * moveSpeed;
+        } else {
+            // Ataque espada
+            let targetY = p.y + p.h;
+            if (Math.abs(e.y - p.y) < 80) {
+                e.swordAttack();
+                // Comprobar daño
+                if (!p.shieldActive && dist < 90) {
+                    // El daño se aplica en update de proyectiles / colisiones de espada
+                }
+            }
+        }
+
+        // Salto ocasional
+        if (Math.random() < 0.05 && e.onGround) {
+            e.vy = -14;
+            e.onGround = false;
+        }
+    }
+
+    // Super ataque
+    if (e.power >= 100 && Math.random() < 0.3) {
+        shoot(e, true);
+    }
+}
+
+// =============================================
+// ESTADO DEL JUEGO
+// =============================================
+let player, enemy, isGameOver;
+let keys = {};
+let lastTime = 0;
+let roundStats = { playerJumps: 0, playerShots: 0, playerShields: 0, playerSword: 0 };
+
+function init() {
+    player = new Fighter(80, true, '#00d2ff', true);
+    enemy  = new Fighter(670, false, '#ff3c00', false);
+    projectiles = [];
+    isGameOver = false;
+    roundStats = { playerJumps: 0, playerShots: 0, playerShields: 0, playerSword: 0 };
+    aiTimer = 30;
+    document.getElementById('overlay').classList.remove('active');
+    updateHUD();
+}
+
+function resetGame() {
+    init();
+    requestAnimationFrame(loop);
+}
+
+// =============================================
+// CONTROLES
+// =============================================
+document.addEventListener('keydown', (e) => {
+    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+    if (isGameOver) return;
+    keys[e.code] = true;
+
+    // Saltar
+    if (e.code === 'ArrowUp' && player.onGround) {
+        player.vy = -15;
+        player.onGround = false;
+        roundStats.playerJumps++;
+        nemesis.memoria.saltos++;
+        nemesis.memoria.total++;
+    }
+
+    // Escudo
+    if (e.code === 'KeyA') {
+        if (player.activateShield()) {
+            roundStats.playerShields++;
+            nemesis.memoria.escudos++;
+            nemesis.memoria.total++;
+        }
+    }
+
+    // Disparo / espada con SPACE
+    if (e.code === 'Space') {
+        if (player.usingGun) {
+            player.charging = true; // inicia carga
+        } else {
+            // Espada
+            player.swordAttack();
+            roundStats.playerSword++;
+            nemesis.memoria.espada++;
+            nemesis.memoria.total++;
+        }
+    }
+
+    // Super
+    if (e.code === 'Digit1' && player.power >= 100) {
+        shoot(player, true);
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+
+    // Soltar SPACE: disparar (modo pistola)
+    if (e.code === 'Space' && player.charging && player.usingGun) {
+        shoot(player);
+        player.charging = false;
+        roundStats.playerShots++;
+        nemesis.memoria.disparos++;
+        nemesis.memoria.total++;
+    }
+});
+
+// =============================================
+// COLISIONES DE ESPADA
+// =============================================
+function checkSwordCollision(attacker, target) {
+    if (!attacker.swordAttacking) return;
+    let dist = Math.abs(attacker.x - target.x);
+    if (dist > 90) return;
+    if (Math.abs(attacker.y - target.y) > 80) return;
+
+    if (target.shieldActive) {
+        target.shieldHit();
+    } else {
+        target.hp -= 18;
+        target.hitFlash = 8;
+    }
+    attacker.swordAttacking = false; // un golpe por swing
+}
+
+// =============================================
+// HUD
+// =============================================
+function buildAmmoBar(bullets, max) {
+    let bar = '';
+    for (let i = 0; i < max; i++) bar += i < bullets ? '█' : '░';
+    return bar;
+}
+
+function updateHUD() {
+    // P1 HP
+    document.getElementById('p1-hp-fill').style.width = Math.max(0, player.hp) + '%';
+    document.getElementById('p2-hp-fill').style.width = Math.max(0, enemy.hp) + '%';
+    document.getElementById('p1-power').style.width = player.power + '%';
+    document.getElementById('p2-power').style.width = enemy.power + '%';
+
+    let p1pow = document.getElementById('p1-power');
+    p1pow.className = player.power >= 100 ? 'power-fill ready' : 'power-fill';
+
+    // Ammo
+    let ammoEl = document.getElementById('p1-ammo');
+    if (player.reloading) {
+        ammoEl.innerHTML = '<span class="warning">RECARGANDO... 5s</span>';
+    } else {
+        ammoEl.innerHTML = `BALAS: ${buildAmmoBar(player.bullets, player.maxBullets)} ${player.bullets}/${player.maxBullets}`;
+    }
+
+    // Escudo
+    let shieldEl = document.getElementById('p1-shield-txt');
+    if (player.shieldCooldown) {
+        shieldEl.innerHTML = 'ESCUDO: <span class="warning">RECARGANDO...</span>';
+    } else if (player.shieldActive) {
+        shieldEl.innerHTML = `ESCUDO: <span class="active">ACTIVO [${player.shieldHP}/${player.shieldMaxHP}]</span>`;
+    } else {
+        shieldEl.innerHTML = 'ESCUDO: <span class="ok">LISTO [A]</span>';
+    }
+
+    // Arma
+    let weaponEl = document.getElementById('p1-weapon');
+    if (player.usingGun) {
+        weaponEl.innerHTML = player.chargeVal > 50 ? 'ARMA: <span class="active">CARGANDO...</span>' : 'ARMA: <span>PISTOLA [SPACE]</span>';
+    } else {
+        weaponEl.innerHTML = 'ARMA: <span class="warning">ESPADA [SPACE]</span>';
+    }
+
+    // Némesis
+    document.getElementById('nem-name').innerText = nemesis.nombre;
+    document.getElementById('nem-level').innerText = `NIVEL ${nemesis.nivel} · DIF ${nemesis.dificultad.toFixed(1)}x`;
+    document.getElementById('nem-traits').innerHTML = nemesis.rasgos.length
+        ? nemesis.rasgos.map(r => `<span style="color:#0f0">⬡${r}</span>`).join(' ')
+        : '<span style="color:#333">Sin rasgos aprendidos</span>';
+
+    // Enemigo
+    let p2ammo = document.getElementById('p2-ammo');
+    p2ammo.innerHTML = enemy.reloading ? '<span style="color:#ff3c00">RECARGANDO...</span>' : `BALAS: ${enemy.bullets}/${enemy.maxBullets}`;
+    let p2shield = document.getElementById('p2-shield-txt');
+    p2shield.innerHTML = enemy.shieldCooldown ? 'ESCUDO: <span style="color:#555">CD</span>'
+        : (enemy.shieldActive ? `ESCUDO: <span style="color:#ff7700">ACTIVO[${enemy.shieldHP}]</span>` : 'ESCUDO: <span style="color:#444">LISTO</span>');
+    document.getElementById('p2-weapon').innerHTML = enemy.usingGun ? 'ARMA: <span>PISTOLA</span>' : 'ARMA: <span style="color:#ff3c00">ESPADA</span>';
+}
+
+// =============================================
+// DRAW WORLD
+// =============================================
+function drawWorld() {
+    // Fondo
+    ctx.fillStyle = '#0c0c0c';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Grid de fondo
+    ctx.strokeStyle = '#151515';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+
+    // Plataforma
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, GROUND, canvas.width, canvas.height - GROUND);
+    ctx.fillStyle = '#00d2ff';
+    ctx.fillRect(0, GROUND, 200, 1);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(200, GROUND, canvas.width - 400, 1);
+    ctx.fillStyle = '#ff3c00';
+    ctx.fillRect(canvas.width - 200, GROUND, 200, 1);
+
+    // Línea central
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.setLineDash([4, 8]);
+    ctx.beginPath(); ctx.moveTo(canvas.width/2, 0); ctx.lineTo(canvas.width/2, GROUND); ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+// =============================================
+// LOOP PRINCIPAL
+// =============================================
+function loop(timestamp) {
+    if (isGameOver) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawWorld();
+
+    // Input continuo jugador
+    if (keys['ArrowRight']) { player.x += 5; player.facingRight = true; }
+    if (keys['ArrowLeft'])  { player.x -= 5; player.facingRight = false; }
+    if (keys['ArrowDown'])  { player.crouching = true; } else { player.crouching = false; }
+
+    // IA
+    handleIA();
+
+    // Updates
+    player.update();
+    enemy.update();
+
+    // Colisiones de espada
+    checkSwordCollision(player, enemy);
+    checkSwordCollision(enemy, player);
+
+    // Proyectiles
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        let pr = projectiles[i];
+        pr.x += pr.vx;
+        pr.life--;
+
+        // Dibujar proyectil
+        let w = pr.isSuper ? 55 : (pr.isBig ? 36 : 18);
+        let h = pr.isSuper ? 22 : (pr.isBig ? 10 : 5);
+
+        if (pr.isSuper) {
+            ctx.shadowColor = 'white'; ctx.shadowBlur = 20;
+            ctx.fillStyle = 'white';
+        } else if (pr.isBig) {
+            ctx.shadowColor = 'gold'; ctx.shadowBlur = 12;
+            ctx.fillStyle = 'gold';
+        } else {
+            ctx.shadowColor = pr.owner.isPlayer ? '#00fff2' : '#ff5500';
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = pr.owner.isPlayer ? '#00fff2' : '#ff5500';
+        }
+        ctx.fillRect(pr.x, pr.y, w, h);
+        ctx.shadowBlur = 0;
+
+        // Target
+        let target = pr.owner === player ? enemy : player;
+
+        // Comprobar hit
+        let hit = pr.x < target.x + target.w && pr.x + w > target.x &&
+                  pr.y < target.y + target.h && pr.y + h > target.y;
+
+        if (hit) {
+            if (target.shieldActive) {
+                target.shieldHit(); // escudo absorbe
+                createHitEffect(pr.x, pr.y, target.isPlayer ? '#00fff2' : '#ff5500', true);
+            } else {
+                target.hp -= pr.damage;
+                target.hitFlash = 10;
+                createHitEffect(pr.x, pr.y, target.isPlayer ? '#00d2ff' : '#ff3c00', false);
+            }
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        // Fuera de pantalla o vida agotada
+        if (pr.x < -80 || pr.x > canvas.width + 80 || pr.life <= 0) {
+            projectiles.splice(i, 1);
+        }
+    }
+
+    // Dibujar personajes
+    player.draw();
+    enemy.draw();
+
+    // HUD HP visual en canvas (barras pequeñas sobre personajes)
+    drawCharacterBars(player);
+    drawCharacterBars(enemy);
+
+    updateHUD();
+
+    // Partículas de hit
+    updateParticles();
+
+    // Fin de ronda
+    if ((player.hp <= 0 || enemy.hp <= 0) && !isGameOver) {
+        isGameOver = true;
+        let playerWon = player.hp > 0;
+        let logs = evolucionarNemesis(playerWon);
+        saveNemesis();
+
+        setTimeout(() => showResult(playerWon, logs), 400);
+    } else {
+        requestAnimationFrame(loop);
+    }
+}
+
+function drawCharacterBars(f) {
+    let barW = 50;
+    let bx = f.x;
+    let by = f.y - 30;
+
+    ctx.fillStyle = '#111';
+    ctx.fillRect(bx, by, barW, 5);
+    let pct = Math.max(0, f.hp / f.maxHp);
+    let barColor = pct > 0.5 ? '#00d2ff' : pct > 0.25 ? '#ffaa00' : '#ff3c00';
+    if (!f.isPlayer) barColor = pct > 0.5 ? '#ff5500' : pct > 0.25 ? '#ff8800' : '#ff0000';
+    ctx.fillStyle = barColor;
+    ctx.fillRect(bx, by, barW * pct, 5);
+}
+
+// =============================================
+// PARTÍCULAS SIMPLES
+// =============================================
+let particles = [];
+function createHitEffect(x, y, color, blocked) {
+    for (let i = 0; i < (blocked ? 6 : 10); i++) {
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6,
+            life: 20 + Math.random() * 10,
+            maxLife: 30,
+            color,
+            size: blocked ? 2 : 3
+        });
+    }
+}
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.life--;
+        let alpha = p.life / p.maxLife;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+        ctx.globalAlpha = 1;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+// =============================================
+// RESULTADO
+// =============================================
+function showResult(playerWon, evolLogs) {
+    let overlay = document.getElementById('overlay');
+    let title = document.getElementById('res-title');
+    let evol = document.getElementById('res-evol');
+    let stats = document.getElementById('res-stats');
+
+    title.innerText = playerWon ? 'NÉMESIS DERROTADO' : 'HAS CAÍDO';
+    title.className = playerWon ? 'win' : 'lose';
+
+    evol.innerHTML = evolLogs.length
+        ? evolLogs.join('<br>')
+        : playerWon
+            ? 'EL NÉMESIS ESTÁ APRENDIENDO DE TUS TÁCTICAS...'
+            : 'EL NÉMESIS CONSOLIDA SU PODER...';
+
+    stats.innerHTML = [
+        `SALTOS: ${roundStats.playerJumps}`,
+        `DISPAROS: ${roundStats.playerShots}`,
+        `ESCUDOS USADOS: ${roundStats.playerShields}`,
+        `ATAQUES DE ESPADA: ${roundStats.playerSword}`,
+        `NIVEL NÉMESIS: ${nemesis.nivel}  ·  DIFICULTAD: ${nemesis.dificultad.toFixed(1)}x`
+    ].join(' &nbsp;|&nbsp; ');
+
+    overlay.classList.add('active');
+}
+
+// =============================================
+// START
+// =============================================
+init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
